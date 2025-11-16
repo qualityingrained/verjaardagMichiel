@@ -810,22 +810,6 @@
             </p>
           </section>
         </div>
-        <div class="carousel-controls">
-          <button
-            class="carousel-arrow"
-            id="carousel-arrow-left"
-            aria-label="Previous riddle"
-          >
-            ←
-          </button>
-          <button
-            class="carousel-arrow"
-            id="carousel-arrow-right"
-            aria-label="Next riddle"
-          >
-            →
-          </button>
-        </div>
       </div>
 
       <div
@@ -859,6 +843,7 @@
       const userAnswers = [0, 0, 0, 0]; // User-selected values (1-6) for each riddle, 0 means unset
       let successTriggered = false; // Track if success animation has been triggered
       let columns = []; // Array to store column DOM elements
+      let buttonJustClicked = {}; // Track which column's button was just clicked to prevent interference
 
       // DOM elements
       const columnsContainer = document.getElementById("columns-container");
@@ -866,8 +851,6 @@
       const videoCloseButton = document.getElementById("video-close-button");
       const geometricShapesContainer =
         document.getElementById("geometric-shapes");
-      const leftArrow = document.getElementById("carousel-arrow-left");
-      const rightArrow = document.getElementById("carousel-arrow-right");
 
       /**
        * Create geometric background shapes
@@ -959,9 +942,24 @@
             "aria-label",
             `Increment answer for riddle ${riddleIndex + 1}`
           );
-          button.addEventListener("click", () =>
-            handleButtonClick(riddleIndex)
-          );
+          button.addEventListener("click", (e) => {
+            e.stopPropagation(); // Prevent event from bubbling to column
+            e.preventDefault(); // Prevent default behavior
+            // Set flag to prevent hideColumnTip from interfering
+            buttonJustClicked[riddleIndex] = true;
+            handleButtonClick(riddleIndex);
+            // Clear flag after a short delay to allow state to settle
+            setTimeout(() => {
+              buttonJustClicked[riddleIndex] = false;
+            }, 300);
+          });
+          // Prevent touch events on button from triggering column interactions
+          button.addEventListener("touchstart", (e) => {
+            e.stopPropagation();
+          });
+          button.addEventListener("touchend", (e) => {
+            e.stopPropagation();
+          });
 
           column.appendChild(label);
           column.appendChild(lightsContainer);
@@ -978,13 +976,26 @@
 
       /**
        * Set up touch and mouse event handlers for a column (just to show tip on hold)
+       * Also handles click to navigate to riddle
        * @param {HTMLElement} column - The column element
        * @param {number} riddleIndex - The riddle index this column represents (0-3)
        */
       function setupColumnInteraction(column, riddleIndex) {
+        let holdStartTime = 0; // Track when hold started for this column
+        let wasHold = false; // Track if it was a hold or a click
+        let isHolding = false; // Track if a hold is currently active
+
         const startHold = (e) => {
+          // Don't start hold if clicking on button
+          if (e.target.classList.contains("column-button")) {
+            return;
+          }
           e.preventDefault();
           if (successTriggered) return;
+
+          holdStartTime = Date.now();
+          wasHold = false;
+          isHolding = true;
 
           // Show tip immediately when starting to hold
           showColumnTip(riddleIndex);
@@ -992,20 +1003,51 @@
         };
 
         const endHold = () => {
+          if (!isHolding) return; // Only process if a hold was actually started
+
+          const holdDuration = Date.now() - holdStartTime;
+          const wasQuickTap = holdDuration < 200; // Less than 200ms = quick tap
+
           column.classList.remove("holding");
           hideColumnTip(riddleIndex);
           currentlyHeldColumn = null;
+          isHolding = false;
+
+          // If it was a quick tap (not a hold), navigate to the riddle
+          if (wasQuickTap && !wasHold) {
+            updateCarouselPosition(riddleIndex);
+          }
         };
 
         // Touch events
         column.addEventListener("touchstart", startHold, { passive: false });
         column.addEventListener("touchend", endHold);
-        column.addEventListener("touchcancel", endHold);
+        column.addEventListener("touchcancel", () => {
+          if (isHolding) {
+            column.classList.remove("holding");
+            hideColumnTip(riddleIndex);
+            currentlyHeldColumn = null;
+            isHolding = false;
+          }
+        });
 
         // Mouse events (for desktop testing)
         column.addEventListener("mousedown", startHold);
         column.addEventListener("mouseup", endHold);
         column.addEventListener("mouseleave", endHold);
+
+        // Also handle click event as fallback for navigation
+        column.addEventListener("click", (e) => {
+          // Don't navigate if clicking the button
+          if (e.target.classList.contains("column-button")) {
+            return;
+          }
+          // Only navigate if it wasn't a hold (check hold duration)
+          const holdDuration = Date.now() - holdStartTime;
+          if (holdDuration < 200 && !wasHold) {
+            updateCarouselPosition(riddleIndex);
+          }
+        });
       }
 
       /**
@@ -1106,6 +1148,16 @@
       function hideColumnTip(riddleIndex) {
         const column = columns[riddleIndex];
         if (!column) return;
+
+        // Don't reset lights if button was just clicked (prevents interference on mobile)
+        if (buttonJustClicked[riddleIndex]) {
+          // Just remove tip classes, don't update lights
+          const lights = column.querySelectorAll(".light");
+          lights.forEach((light) => {
+            light.classList.remove("tip", "showing");
+          });
+          return;
+        }
 
         const lights = column.querySelectorAll(".light");
         // Remove tip classes
@@ -1271,10 +1323,6 @@
         currentRiddleIndex = index;
         const translateX = -index * 100;
         riddleCarousel.style.transform = `translateX(${translateX}%)`;
-
-        // Update arrow states
-        leftArrow.disabled = index === 0;
-        rightArrow.disabled = index === totalRiddles - 1;
       }
 
       /**
@@ -1295,14 +1343,8 @@
         }
       }
 
-      // Set up carousel navigation
-      if (leftArrow && rightArrow) {
-        leftArrow.addEventListener("click", navigatePrevious);
-        rightArrow.addEventListener("click", navigateNext);
-
-        // Initialize carousel position
-        updateCarouselPosition(0);
-      }
+      // Initialize carousel position
+      updateCarouselPosition(0);
 
       // Add touch swipe functionality for mobile
       const carouselContainer = document.querySelector(
