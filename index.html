@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="origin" />
+    <title>Riddle Lights</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: #1a2332;
+        color: #e0e0e0;
+        min-height: 100vh;
+        padding: 20px;
+        line-height: 1.6;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      /* Animated geometric background */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+            circle at 20% 30%,
+            rgba(255, 140, 0, 0.05) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 70%,
+            rgba(255, 140, 0, 0.03) 0%,
+            transparent 50%
+          ),
+          linear-gradient(135deg, #1a2332 0%, #0f1419 100%);
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px 0;
+        position: relative;
+        z-index: 1;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 50px;
+        position: relative;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        color: #ff8c00;
+        text-shadow: 0 0 20px rgba(255, 140, 0, 0.5),
+          0 4px 8px rgba(0, 0, 0, 0.5), 2px 2px 0px rgba(0, 0, 0, 0.3);
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        position: relative;
+        display: inline-block;
+        animation: titleGlow 3s ease-in-out infinite;
+        transform-origin: center;
+      }
+
+      @keyframes titleGlow {
+        0%,
+        100% {
+          text-shadow: 0 0 20px rgba(255, 140, 0, 0.5),
+            0 4px 8px rgba(0, 0, 0, 0.5), 2px 2px 0px rgba(0, 0, 0, 0.3);
+          transform: scale(1);
+        }
+        50% {
+          text-shadow: 0 0 30px rgba(255, 140, 0, 0.8),
+            0 0 40px rgba(255, 140, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.5),
+            2px 2px 0px rgba(0, 0, 0, 0.3);
+          transform: scale(1.02);
+        }
+      }
+
+      h1::after {
+        content: "";
+        position: absolute;
+        bottom: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #ff8c00, transparent);
+        box-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
+      }
+
+      .subtitle {
+        font-size: 1rem;
+        color: #8a9ba8;
+        margin-top: 15px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .riddle-carousel-container {
+        position: relative;
+        margin-bottom: 50px;
+        overflow: hidden;
+      }
+
+      .riddle-carousel {
+        display: flex;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .riddle-section {
+        min-width: 100%;
+        padding: 30px;
+        background: rgba(26, 35, 50, 0.6);
+        border-radius: 12px;
+        border: 2px solid rgba(255, 140, 0, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        position: relative;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+      }
+
+      .riddle-section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #ff8c00, transparent);
+        border-radius: 12px 0 0 12px;
+        opacity: 0.6;
+      }
+
+      .riddle-number-bg {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 15rem;
+        font-weight: 900;
+        color: rgba(255, 140, 0, 0.08);
+        line-height: 1;
+        z-index: 0;
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .riddle-section:hover {
+        border-color: rgba(255, 140, 0, 0.4);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5),
+          0 0 20px rgba(255, 140, 0, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+
+      .riddle-text {
+        font-size: 1.1rem;
+        margin-bottom: 25px;
+        color: #d4d9de;
+        white-space: pre-line;
+        line-height: 1.8;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        position: relative;
+        z-index: 1;
+      }
+
+      .carousel-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .carousel-arrow {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(26, 35, 50, 0.8);
+        border: 2px solid rgba(255, 140, 0, 0.3);
+        color: #ff8c00;
+        font-size: 1.5rem;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .carousel-arrow:hover:not(:disabled) {
+        background: rgba(26, 35, 50, 0.95);
+        border-color: rgba(255, 140, 0, 0.5);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4),
+          0 0 20px rgba(255, 140, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        transform: scale(1.1);
+      }
+
+      .carousel-arrow:active:not(:disabled) {
+        transform: scale(0.95);
+      }
+
+      .carousel-arrow:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .columns-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin: 50px 0;
+        padding: 30px 20px;
+        flex-wrap: wrap;
+        position: relative;
+      }
+
+      .column {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 12px;
+        background: rgba(26, 35, 50, 0.7);
+        border: 2px solid rgba(255, 140, 0, 0.15);
+        border-radius: 8px;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        position: relative;
+        transform-style: preserve-3d;
+      }
+
+      .column.holding {
+        border-color: rgba(255, 140, 0, 0.5);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4),
+          0 0 20px rgba(255, 140, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+
+      .column::before {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 140, 0, 0.3),
+          transparent
+        );
+        border-radius: 8px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: -1;
+      }
+
+      .column:hover {
+        background: rgba(26, 35, 50, 0.9);
+        border-color: rgba(255, 140, 0, 0.4);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4),
+          0 0 20px rgba(255, 140, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+
+      .column:hover::before {
+        opacity: 1;
+      }
+
+      .column:active {
+        transform: translateY(-1px);
+      }
+
+      .column-label {
+        font-size: 1rem;
+        color: #ff8c00;
+        margin-bottom: 8px;
+        font-weight: 700;
+        text-shadow: 0 0 10px rgba(255, 140, 0, 0.5),
+          0 2px 4px rgba(0, 0, 0, 0.3);
+        letter-spacing: 1px;
+      }
+
+      .column-lights {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .column-button {
+        margin-top: 15px;
+        width: 100%;
+        max-width: 120px;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #ff8c00;
+        background: rgba(26, 35, 50, 0.8);
+        border: 2px solid rgba(255, 140, 0, 0.3);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 0 0 10px rgba(255, 140, 0, 0.3);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .column-button:hover:not(:disabled) {
+        background: rgba(26, 35, 50, 0.95);
+        border-color: rgba(255, 140, 0, 0.5);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4),
+          0 0 15px rgba(255, 140, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        transform: translateY(-2px);
+      }
+
+      .column-button:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+
+      .column-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .light {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 3px solid rgba(138, 155, 168, 0.3);
+        background: radial-gradient(
+            circle at 30% 30%,
+            rgba(138, 155, 168, 0.2),
+            rgba(26, 35, 50, 0.9)
+          ),
+          linear-gradient(135deg, #2a3542, #1a2332);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4),
+          inset 0 2px 4px rgba(0, 0, 0, 0.3),
+          inset 0 -2px 4px rgba(255, 255, 255, 0.05);
+        position: relative;
+        transform-style: preserve-3d;
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .light.tip {
+        opacity: 0;
+        transform: scale(0.3);
+        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      .light.tip.showing {
+        opacity: 1;
+        transform: scale(1.1);
+      }
+
+      .light::before {
+        content: "";
+        position: absolute;
+        top: 20%;
+        left: 20%;
+        width: 30%;
+        height: 30%;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        filter: blur(2px);
+      }
+
+      .light.on {
+        background: radial-gradient(
+            circle at 30% 30%,
+            rgba(255, 200, 100, 0.8),
+            #ff8c00
+          ),
+          linear-gradient(135deg, #ff9500, #ff6b00);
+        border-color: #ffaa33;
+        box-shadow: 0 0 20px rgba(255, 140, 0, 0.8),
+          0 0 40px rgba(255, 140, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5),
+          inset 0 2px 4px rgba(255, 255, 255, 0.2),
+          inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+        transform: scale(1.1);
+        animation: lightPulse 2s ease-in-out infinite;
+        opacity: 1;
+      }
+
+      .light.on.showing {
+        transform: scale(1.1);
+      }
+
+      @keyframes lightPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 20px rgba(255, 140, 0, 0.8),
+            0 0 40px rgba(255, 140, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5),
+            inset 0 2px 4px rgba(255, 255, 255, 0.2),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+        }
+        50% {
+          box-shadow: 0 0 30px rgba(255, 140, 0, 1),
+            0 0 60px rgba(255, 140, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5),
+            inset 0 2px 4px rgba(255, 255, 255, 0.3),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+        }
+      }
+
+      /* Success state - lights turn green */
+      body.success .light.on {
+        background: radial-gradient(
+            circle at 30% 30%,
+            rgba(100, 255, 150, 0.9),
+            #33ff66
+          ),
+          linear-gradient(135deg, #4aff7a, #22cc55);
+        border-color: #55ff88;
+        box-shadow: 0 0 30px rgba(51, 255, 102, 1),
+          0 0 60px rgba(51, 255, 102, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5),
+          inset 0 2px 4px rgba(255, 255, 255, 0.3),
+          inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+        transform: scale(1.15);
+        animation: successPulse 0.8s ease-in-out infinite;
+      }
+
+      @keyframes successPulse {
+        0%,
+        100% {
+          transform: scale(1.15);
+          box-shadow: 0 0 30px rgba(51, 255, 102, 1),
+            0 0 60px rgba(51, 255, 102, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5),
+            inset 0 2px 4px rgba(255, 255, 255, 0.3),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+        }
+        50% {
+          transform: scale(1.25);
+          box-shadow: 0 0 40px rgba(51, 255, 102, 1.2),
+            0 0 80px rgba(51, 255, 102, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5),
+            inset 0 2px 4px rgba(255, 255, 255, 0.4),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+        }
+      }
+
+      .interaction-hint {
+        text-align: center;
+        color: #8a9ba8;
+        font-size: 0.95rem;
+        margin-top: 30px;
+        margin-bottom: 20px;
+        font-style: italic;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        letter-spacing: 0.5px;
+      }
+
+      /* Geometric background shapes */
+      .geometric-shapes {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+      }
+
+      .shape {
+        position: absolute;
+        opacity: 0.15;
+        animation: float 20s ease-in-out infinite;
+      }
+
+      .shape.cube {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 140, 0, 0.3),
+          rgba(255, 140, 0, 0.1)
+        );
+        transform: rotate(45deg);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .shape.sphere {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(255, 140, 0, 0.2),
+          transparent
+        );
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .shape.cylinder {
+        width: 25px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 140, 0, 0.25),
+          rgba(255, 140, 0, 0.1)
+        );
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .shape.torus {
+        width: 35px;
+        height: 35px;
+        border: 4px solid rgba(255, 140, 0, 0.2);
+        border-radius: 50%;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        25% {
+          transform: translate(30px, -30px) rotate(90deg);
+        }
+        50% {
+          transform: translate(-20px, -50px) rotate(180deg);
+        }
+        75% {
+          transform: translate(-30px, -20px) rotate(270deg);
+        }
+      }
+
+      /* Video popup modal */
+      .video-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.5s ease-in;
+        backdrop-filter: blur(10px);
+      }
+
+      .video-modal.show {
+        display: flex;
+        opacity: 1;
+      }
+
+      .video-modal-content {
+        position: relative;
+        width: 90%;
+        max-width: 900px;
+        padding: 20px;
+        animation: modalSlideIn 0.5s ease-out;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: scale(0.8) translateY(50px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      .video-close-button {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(26, 35, 50, 0.95);
+        border: 2px solid rgba(255, 140, 0, 0.5);
+        color: #ff8c00;
+        font-size: 1.5rem;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5),
+          0 0 20px rgba(255, 140, 0, 0.3);
+        z-index: 1001;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .video-close-button:hover {
+        background: rgba(26, 35, 50, 1);
+        border-color: rgba(255, 140, 0, 0.8);
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6),
+          0 0 30px rgba(255, 140, 0, 0.4);
+      }
+
+      .video-close-button:active {
+        transform: scale(0.95);
+      }
+
+      .video-wrapper {
+        position: relative;
+        width: 100%;
+        padding-bottom: 56.25%; /* 16:9 aspect ratio */
+        background: #000;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8),
+          0 0 40px rgba(255, 140, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 140, 0, 0.5);
+      }
+
+      .video-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      /* Responsive adjustments */
+      @media (min-width: 768px) {
+        h1 {
+          font-size: 3.5rem;
+        }
+
+        .riddle-text {
+          font-size: 1.2rem;
+        }
+
+        .light {
+          width: 48px;
+          height: 48px;
+        }
+
+        .columns-container {
+          gap: 25px;
+        }
+
+        .shape {
+          opacity: 0.2;
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .container {
+          max-width: 750px;
+        }
+
+        .shape {
+          opacity: 0.25;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="geometric-shapes" id="geometric-shapes"></div>
+    <main class="container">
+      <header>
+        <h1>Riddle Lights</h1>
+        <p class="subtitle">
+          Solve each riddle and set the lights. Find the correct combination to
+          unlock the secret.
+        </p>
+      </header>
+
+      <div class="riddle-carousel-container">
+        <div class="riddle-carousel" id="riddle-carousel">
+          <section class="riddle-section" id="riddle-1">
+            <div class="riddle-number-bg" id="riddle-number-bg-1">1</div>
+            <p class="riddle-text" id="riddle-text-1">
+              "I'm the lone survivor when division pairs dissolve, The seed of
+              every sequence all mathematicians solve. Remove me from a mirror
+              and the world stays much the same— Which number hides beneath this
+              claim?"
+            </p>
+          </section>
+
+          <section class="riddle-section" id="riddle-2">
+            <div class="riddle-number-bg" id="riddle-number-bg-2">2</div>
+            <p class="riddle-text" id="riddle-text-2">
+              "I'm the count of choices left when five have wandered past, The
+              tally on a cube's far face when one is shown at last. Lightning's
+              fork may split in threes, but mine are deeper tricks— Which number
+              hums between the flicks?"
+            </p>
+          </section>
+
+          <section class="riddle-section" id="riddle-3">
+            <div class="riddle-number-bg" id="riddle-number-bg-3">3</div>
+            <p class="riddle-text" id="riddle-text-3">
+              "A harmony of angles where the sum refuses bends, The smallest
+              crowd required for a cycle that never ends. In fairy tales, good
+              wishes granted often come in me— Which number forms this trinity?"
+            </p>
+          </section>
+
+          <section class="riddle-section" id="riddle-4">
+            <div class="riddle-number-bg" id="riddle-number-bg-4">4</div>
+            <p class="riddle-text" id="riddle-text-4">
+              "I'm the quorum of fingers that can cast a single vote, The petals
+              on a blossom children sometimes idly note. Ancient poets carved my
+              shape into celestial guides— Which number in the heavens hides?"
+            </p>
+          </section>
+        </div>
+        <div class="carousel-controls">
+          <button
+            class="carousel-arrow"
+            id="carousel-arrow-left"
+            aria-label="Previous riddle"
+          >
+            ←
+          </button>
+          <button
+            class="carousel-arrow"
+            id="carousel-arrow-right"
+            aria-label="Next riddle"
+          >
+            →
+          </button>
+        </div>
+      </div>
+
+      <p class="interaction-hint">
+        Hold a column to view the riddle. Use the button to set it.
+      </p>
+      <div
+        class="columns-container"
+        id="columns-container"
+        aria-label="Answer columns"
+      >
+        <!-- Columns will be generated by JavaScript -->
+      </div>
+
+      <!-- Video popup modal -->
+      <div class="video-modal" id="video-modal">
+        <div class="video-modal-content">
+          <button
+            class="video-close-button"
+            id="video-close-button"
+            aria-label="Close video"
+          >
+            ×
+          </button>
+          <div class="video-wrapper">
+            <!-- YouTube iframe will be inserted here on success -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // State management
+      const CORRECT_ANSWERS = [1, 6, 3, 5]; // Hard-coded correct answers
+      const userAnswers = [0, 0, 0, 0]; // User-selected values (1-6) for each riddle, 0 means unset
+      let successTriggered = false; // Track if success animation has been triggered
+      let columns = []; // Array to store column DOM elements
+
+      // DOM elements
+      const columnsContainer = document.getElementById("columns-container");
+      const videoModal = document.getElementById("video-modal");
+      const videoCloseButton = document.getElementById("video-close-button");
+      const geometricShapesContainer =
+        document.getElementById("geometric-shapes");
+      const leftArrow = document.getElementById("carousel-arrow-left");
+      const rightArrow = document.getElementById("carousel-arrow-right");
+
+      /**
+       * Create geometric background shapes
+       */
+      function createGeometricShapes() {
+        const shapeTypes = ["cube", "sphere", "cylinder", "torus"];
+        const numShapes = 25; // Number of shapes to create
+
+        for (let i = 0; i < numShapes; i++) {
+          const shape = document.createElement("div");
+          const shapeType =
+            shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+          shape.className = `shape ${shapeType}`;
+
+          // Random position
+          const left = Math.random() * 100;
+          const top = Math.random() * 100;
+          shape.style.left = `${left}%`;
+          shape.style.top = `${top}%`;
+
+          // Random animation delay and duration
+          const delay = Math.random() * 5;
+          const duration = 15 + Math.random() * 10;
+          shape.style.animationDelay = `${delay}s`;
+          shape.style.animationDuration = `${duration}s`;
+
+          // Random size variation using width/height
+          const sizeMultiplier = 0.7 + Math.random() * 0.6;
+          if (shapeType === "cube") {
+            const baseSize = 40;
+            shape.style.width = `${baseSize * sizeMultiplier}px`;
+            shape.style.height = `${baseSize * sizeMultiplier}px`;
+          } else if (shapeType === "sphere") {
+            const baseSize = 30;
+            shape.style.width = `${baseSize * sizeMultiplier}px`;
+            shape.style.height = `${baseSize * sizeMultiplier}px`;
+          } else if (shapeType === "cylinder") {
+            const baseWidth = 25;
+            const baseHeight = 50;
+            shape.style.width = `${baseWidth * sizeMultiplier}px`;
+            shape.style.height = `${baseHeight * sizeMultiplier}px`;
+          } else if (shapeType === "torus") {
+            const baseSize = 35;
+            shape.style.width = `${baseSize * sizeMultiplier}px`;
+            shape.style.height = `${baseSize * sizeMultiplier}px`;
+          }
+
+          geometricShapesContainer.appendChild(shape);
+        }
+      }
+
+      /**
+       * Create and initialize the 4 columns (one per riddle) with 6 lights each (for answers 1-6)
+       * Lights are ordered from bottom to top (1 at bottom, 6 at top)
+       */
+      function initializeColumns() {
+        for (let riddleIndex = 0; riddleIndex < 4; riddleIndex++) {
+          const column = document.createElement("div");
+          column.className = "column";
+          column.setAttribute("data-riddle", riddleIndex);
+          column.setAttribute("aria-label", `Riddle ${riddleIndex + 1}`);
+
+          const label = document.createElement("div");
+          label.className = "column-label";
+          label.textContent = riddleIndex + 1;
+
+          const lightsContainer = document.createElement("div");
+          lightsContainer.className = "column-lights";
+
+          // Create 6 lights (one for each possible answer 1-6) stacked vertically
+          // Bottom to top: 1, 2, 3, 4, 5, 6
+          for (let answerValue = 1; answerValue <= 6; answerValue++) {
+            const light = document.createElement("div");
+            light.className = "light";
+            light.setAttribute("data-answer", answerValue);
+            light.setAttribute("aria-hidden", "true");
+            lightsContainer.appendChild(light);
+          }
+
+          // Create button to increment answer
+          const button = document.createElement("button");
+          button.className = "column-button";
+          button.textContent = "+1";
+          button.setAttribute(
+            "aria-label",
+            `Increment answer for riddle ${riddleIndex + 1}`
+          );
+          button.addEventListener("click", () =>
+            handleButtonClick(riddleIndex)
+          );
+
+          column.appendChild(label);
+          column.appendChild(lightsContainer);
+          column.appendChild(button);
+          columnsContainer.appendChild(column);
+          columns.push(column);
+
+          // Set up touch and mouse events for holding (just to show tip)
+          setupColumnInteraction(column, riddleIndex);
+        }
+      }
+
+      let currentlyHeldColumn = null; // Track which column is currently being held
+
+      /**
+       * Set up touch and mouse event handlers for a column (just to show tip on hold)
+       * @param {HTMLElement} column - The column element
+       * @param {number} riddleIndex - The riddle index this column represents (0-3)
+       */
+      function setupColumnInteraction(column, riddleIndex) {
+        const startHold = (e) => {
+          e.preventDefault();
+          if (successTriggered) return;
+
+          // Show tip immediately when starting to hold
+          showColumnTip(riddleIndex);
+          column.classList.add("holding");
+        };
+
+        const endHold = () => {
+          column.classList.remove("holding");
+          hideColumnTip(riddleIndex);
+          currentlyHeldColumn = null;
+        };
+
+        // Touch events
+        column.addEventListener("touchstart", startHold, { passive: false });
+        column.addEventListener("touchend", endHold);
+        column.addEventListener("touchcancel", endHold);
+
+        // Mouse events (for desktop testing)
+        column.addEventListener("mousedown", startHold);
+        column.addEventListener("mouseup", endHold);
+        column.addEventListener("mouseleave", endHold);
+      }
+
+      /**
+       * Handle button click to increment answer for a riddle
+       * @param {number} riddleIndex - The riddle index (0-3)
+       */
+      function handleButtonClick(riddleIndex) {
+        if (successTriggered) return;
+
+        // Increment answer: 0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 0
+        userAnswers[riddleIndex] = (userAnswers[riddleIndex] + 1) % 7;
+
+        // Update the display
+        updateColumnLights(riddleIndex);
+
+        // Check if combination is correct
+        if (!successTriggered && checkCombination()) {
+          triggerSuccess();
+        }
+      }
+
+      /**
+       * Update the lights display for a specific column
+       * Shows lights from bottom up based on answer value
+       * Lights are always visible, just transition from grey to orange
+       * @param {number} riddleIndex - The riddle index (0-3)
+       */
+      function updateColumnLights(riddleIndex) {
+        const column = columns[riddleIndex];
+        if (!column) return;
+
+        const lights = column.querySelectorAll(".light");
+        const answer = userAnswers[riddleIndex];
+
+        // Update all lights - remove 'on' class from all first
+        lights.forEach((light) => {
+          light.classList.remove("on");
+        });
+
+        // If answer is 0, all lights stay grey (off)
+        if (answer === 0) {
+          return;
+        }
+
+        // Light up lights from bottom (index 0) up to answer position
+        // Answer 1 = light at index 0 (bottom)
+        // Answer 6 = lights at indices 0-5 (all lights)
+        for (let i = 0; i < answer; i++) {
+          lights[i].classList.add("on");
+        }
+      }
+
+      /**
+       * Show the tip (single light at answer position) for a specific column when holding
+       * Only one tip should be visible at a time, and it should animate smoothly from background
+       * The tip uses a separate class so it doesn't interfere with set answers
+       * @param {number} riddleIndex - The riddle index (0-3)
+       */
+      function showColumnTip(riddleIndex) {
+        // Hide all tips first (only remove tip classes, don't restore state)
+        columns.forEach((column) => {
+          const lights = column.querySelectorAll(".light");
+          lights.forEach((light) => {
+            light.classList.remove("tip", "showing");
+          });
+        });
+
+        // Show tip for this column
+        const column = columns[riddleIndex];
+        if (!column) return;
+
+        const lights = column.querySelectorAll(".light");
+        const answer = userAnswers[riddleIndex] || 1; // Default to 1 if not set
+
+        // If answer is 0, show tip at position 1
+        const tipPosition = answer === 0 ? 1 : answer;
+
+        // Show only the single light at the answer position as a tip
+        // Answer 1 = index 0 (bottom), Answer 6 = index 5 (top)
+        const targetLight = lights[tipPosition - 1];
+        if (targetLight) {
+          // Add 'tip' and 'on' classes, then 'showing' for animation
+          targetLight.classList.add("tip", "on");
+          // Small delay to ensure classes are applied before animation
+          requestAnimationFrame(() => {
+            targetLight.classList.add("showing");
+          });
+        }
+
+        currentlyHeldColumn = riddleIndex;
+      }
+
+      /**
+       * Hide the tip for a specific column (smooth fade out)
+       * Only removes tip classes, then restores correct light state
+       * @param {number} riddleIndex - The riddle index (0-3)
+       */
+      function hideColumnTip(riddleIndex) {
+        const column = columns[riddleIndex];
+        if (!column) return;
+
+        const lights = column.querySelectorAll(".light");
+        // Remove tip classes
+        lights.forEach((light) => {
+          light.classList.remove("tip", "showing");
+        });
+
+        // Restore the correct state based on the answer
+        updateColumnLights(riddleIndex);
+      }
+
+      /**
+       * Hide all tips across all columns
+       * Only removes tip classes, then restores correct light state for all columns
+       */
+      function hideAllTips() {
+        columns.forEach((column, riddleIndex) => {
+          const lights = column.querySelectorAll(".light");
+          // Remove tip classes from all lights
+          lights.forEach((light) => {
+            light.classList.remove("tip", "showing");
+          });
+        });
+
+        // Restore correct state for all columns
+        columns.forEach((column, riddleIndex) => {
+          updateColumnLights(riddleIndex);
+        });
+      }
+
+      /**
+       * Show all correct lights when success is triggered
+       * Lights are shown from bottom up based on answer value
+       */
+      function showAllCorrectLights() {
+        columns.forEach((column, riddleIndex) => {
+          const lights = column.querySelectorAll(".light");
+          const answer = userAnswers[riddleIndex];
+
+          // Light up lights from bottom (index 0) up to answer position
+          // Answer 1 = light at index 0 (bottom)
+          // Answer 6 = lights at indices 0-5 (all lights)
+          if (answer > 0) {
+            for (let i = 0; i < answer; i++) {
+              if (lights[i]) {
+                lights[i].classList.add("on");
+              }
+            }
+          }
+        });
+      }
+
+      /**
+       * Check if the current combination matches the correct answers
+       * @returns {boolean} - True if all answers are correct
+       */
+      function checkCombination() {
+        // Check if all riddles have a value between 1 and 6 (no zeros)
+        if (userAnswers.some((answer) => answer === 0)) {
+          return false;
+        }
+
+        // Check if the combination matches the correct answers
+        return userAnswers.every(
+          (answer, index) => answer === CORRECT_ANSWERS[index]
+        );
+      }
+
+      /**
+       * Close the video modal
+       */
+      function closeVideoModal() {
+        if (videoModal) {
+          videoModal.classList.remove("show");
+        }
+      }
+
+      /**
+       * Trigger success animation and show YouTube video in popup
+       */
+      function triggerSuccess() {
+        if (successTriggered) return; // Prevent multiple triggers
+        successTriggered = true;
+
+        // Hide any visible tips
+        hideAllTips();
+
+        // Show all correct lights (orange)
+        showAllCorrectLights();
+
+        // Disable all columns and buttons to prevent further interaction
+        columns.forEach((column) => {
+          column.style.pointerEvents = "none";
+          column.style.opacity = "0.7";
+          const button = column.querySelector(".column-button");
+          if (button) {
+            button.disabled = true;
+          }
+        });
+
+        // Disable carousel arrows
+        if (leftArrow) leftArrow.disabled = true;
+        if (rightArrow) rightArrow.disabled = true;
+
+        // Wait 500ms before transitioning to green
+        setTimeout(() => {
+          // Add success class to body for CSS animations (turns lights green)
+          document.body.classList.add("success");
+
+          // After another 500ms (1 second total from success), show the video popup
+          setTimeout(() => {
+            if (!videoModal) {
+              console.error("Video modal not found");
+              return;
+            }
+
+            const videoWrapper = videoModal.querySelector(".video-wrapper");
+            if (!videoWrapper) {
+              console.error("Video wrapper not found");
+              return;
+            }
+
+            // Create YouTube iframe
+            const iframe = document.createElement("iframe");
+            // YouTube embed URL - using standard format
+            iframe.src =
+              "https://www.youtube.com/embed/RODQNphsDpI?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1";
+            iframe.allow =
+              "autoplay; fullscreen; picture-in-picture; encrypted-media";
+            iframe.allowFullscreen = true;
+            iframe.className = "video";
+            iframe.title = "De Gouden Kooi";
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+            iframe.setAttribute("frameborder", "0");
+            iframe.setAttribute("webkitallowfullscreen", "true");
+            iframe.setAttribute("mozallowfullscreen", "true");
+            iframe.setAttribute("referrerpolicy", "origin-when-cross-origin");
+
+            // Clear any existing content and add iframe
+            videoWrapper.innerHTML = "";
+            videoWrapper.appendChild(iframe);
+
+            // Show the modal popup
+            videoModal.classList.add("show");
+
+            // Log for debugging
+            console.log("Video iframe added to modal", iframe.src);
+          }, 500);
+        }, 500);
+      }
+
+      // Carousel state
+      let currentRiddleIndex = 0;
+      const totalRiddles = 4;
+      const riddleCarousel = document.getElementById("riddle-carousel");
+
+      /**
+       * Update carousel position
+       * @param {number} index - The riddle index to show (0-3)
+       */
+      function updateCarouselPosition(index) {
+        if (index < 0 || index >= totalRiddles) return;
+
+        currentRiddleIndex = index;
+        const translateX = -index * 100;
+        riddleCarousel.style.transform = `translateX(${translateX}%)`;
+
+        // Update arrow states
+        leftArrow.disabled = index === 0;
+        rightArrow.disabled = index === totalRiddles - 1;
+      }
+
+      /**
+       * Navigate to previous riddle
+       */
+      function navigatePrevious() {
+        if (currentRiddleIndex > 0) {
+          updateCarouselPosition(currentRiddleIndex - 1);
+        }
+      }
+
+      /**
+       * Navigate to next riddle
+       */
+      function navigateNext() {
+        if (currentRiddleIndex < totalRiddles - 1) {
+          updateCarouselPosition(currentRiddleIndex + 1);
+        }
+      }
+
+      // Set up carousel navigation
+      if (leftArrow && rightArrow) {
+        leftArrow.addEventListener("click", navigatePrevious);
+        rightArrow.addEventListener("click", navigateNext);
+
+        // Initialize carousel position
+        updateCarouselPosition(0);
+      }
+
+      // Set up close button functionality
+      if (videoCloseButton) {
+        videoCloseButton.addEventListener("click", closeVideoModal);
+      }
+
+      // Close modal when clicking outside the video
+      if (videoModal) {
+        videoModal.addEventListener("click", (e) => {
+          if (e.target === videoModal) {
+            closeVideoModal();
+          }
+        });
+      }
+
+      // Close modal with Escape key
+      document.addEventListener("keydown", (e) => {
+        if (
+          e.key === "Escape" &&
+          videoModal &&
+          videoModal.classList.contains("show")
+        ) {
+          closeVideoModal();
+        }
+      });
+
+      // Initialize: Create geometric shapes, then columns and set up interactions
+      createGeometricShapes();
+      initializeColumns();
+
+      // Initialize all lights to be visible (grey) - all answers start at 0
+      columns.forEach((column, riddleIndex) => {
+        updateColumnLights(riddleIndex);
+      });
+    </script>
+  </body>
+</html>
