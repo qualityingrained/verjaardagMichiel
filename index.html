@@ -64,9 +64,6 @@
       h1 {
         font-size: 2.5rem;
         margin-bottom: 10px;
-        color: #ff8c00;
-        text-shadow: 0 0 20px rgba(255, 140, 0, 0.5),
-          0 4px 8px rgba(0, 0, 0, 0.5), 2px 2px 0px rgba(0, 0, 0, 0.3);
         font-weight: 800;
         letter-spacing: 2px;
         text-transform: uppercase;
@@ -74,6 +71,17 @@
         display: inline-block;
         animation: titleGlow 3s ease-in-out infinite;
         transform-origin: center;
+      }
+
+      .title-orange {
+        color: #ff8c00;
+        text-shadow: 0 0 20px rgba(255, 140, 0, 0.5),
+          0 4px 8px rgba(0, 0, 0, 0.5), 2px 2px 0px rgba(0, 0, 0, 0.3);
+      }
+
+      .title-grey {
+        color: #8a9ba8;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
       }
 
       @keyframes titleGlow {
@@ -710,7 +718,7 @@
       .footer {
         text-align: center;
         padding: 40px 20px;
-        margin-top: 60px;
+        margin-top: 20px;
         color: rgba(138, 155, 168, 0.7);
         font-size: 0.9rem;
         position: relative;
@@ -748,7 +756,7 @@
 
         .footer {
           padding: 30px 15px;
-          margin-top: 40px;
+          margin-top: 15px;
           font-size: 0.85rem;
         }
       }
@@ -792,10 +800,15 @@
     <div class="geometric-shapes" id="geometric-shapes"></div>
     <main class="container">
       <header>
-        <h1>Michielysterie</h1>
+        <h1>
+          <span class="title-orange">MICHIEL</span
+          ><span class="title-grey">YSTERY</span>
+        </h1>
         <p class="subtitle">
-          Solve each riddle and set the lights. Find the correct combination to
-          unlock the secret.
+          Solve each whispered puzzle, let intuition guide your sights. <br />
+          Shape the silent signals, tuning shadows into lights. <br />
+          Only when the hidden pattern stands revealed and true, <br />
+          Will the final secret turn and open itself to you
         </p>
       </header>
 
@@ -867,7 +880,10 @@
     </main>
 
     <footer class="footer">
-      <p>With lot's of birthday wishes, from Ella, Manu, Céline and Joren</p>
+      <p>
+        Happy Birthday Michiel! <br />
+        Ella, Manu, Céline and Joren
+      </p>
     </footer>
 
     <script>
