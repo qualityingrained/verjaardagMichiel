@@ -706,6 +706,23 @@
         border: none;
       }
 
+      /* Footer */
+      .footer {
+        text-align: center;
+        padding: 40px 20px;
+        margin-top: 60px;
+        color: rgba(138, 155, 168, 0.7);
+        font-size: 0.9rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      .footer p {
+        margin: 0;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        letter-spacing: 0.5px;
+      }
+
       /* Mobile adjustments */
       @media (max-width: 767px) {
         .column {
@@ -727,6 +744,12 @@
           font-size: 0.75rem;
           padding: 10px 16px;
           letter-spacing: 0.5px;
+        }
+
+        .footer {
+          padding: 30px 15px;
+          margin-top: 40px;
+          font-size: 0.85rem;
         }
       }
 
@@ -769,7 +792,7 @@
     <div class="geometric-shapes" id="geometric-shapes"></div>
     <main class="container">
       <header>
-        <h1>Riddle Lights</h1>
+        <h1>Michielysterie</h1>
         <p class="subtitle">
           Solve each riddle and set the lights. Find the correct combination to
           unlock the secret.
@@ -842,6 +865,10 @@
         </div>
       </div>
     </main>
+
+    <footer class="footer">
+      <p>With lot's of birthday wishes, from Ella, Manu, Céline and Joren</p>
+    </footer>
 
     <script>
       // State management
