@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="referrer" content="origin" />
+    <meta name="referrer" content="no-referrer-when-downgrade" />
     <title>Riddle Lights</title>
     <style>
       * {
@@ -1124,7 +1124,14 @@
        * Trigger success animation and show YouTube video in popup
        */
       function triggerSuccess() {
-        if (successTriggered) return; // Prevent multiple triggers
+        // Allow multiple triggers if user cycles back to correct combination
+        if (successTriggered) {
+          // If already triggered, just show the video again
+          if (videoModal && !videoModal.classList.contains("show")) {
+            videoModal.classList.add("show");
+          }
+          return;
+        }
         successTriggered = true;
 
         // Hide any visible tips
@@ -1133,19 +1140,7 @@
         // Show all correct lights (orange)
         showAllCorrectLights();
 
-        // Disable all columns and buttons to prevent further interaction
-        columns.forEach((column) => {
-          column.style.pointerEvents = "none";
-          column.style.opacity = "0.7";
-          const button = column.querySelector(".column-button");
-          if (button) {
-            button.disabled = true;
-          }
-        });
-
-        // Disable carousel arrows
-        if (leftArrow) leftArrow.disabled = true;
-        if (rightArrow) rightArrow.disabled = true;
+        // Note: Buttons remain enabled so users can continue cycling if they want
 
         // Wait 500ms before transitioning to green
         setTimeout(() => {
@@ -1166,13 +1161,12 @@
             }
 
             // Create YouTube iframe
+            // According to YouTube docs: HTTP Referer is required and sent automatically by browser
+            // Don't set referrerpolicy on iframe - let browser send referrer naturally
             const iframe = document.createElement("iframe");
-            // Use YouTube nocookie domain to avoid referrer issues
-            // Get current origin for referrer
-            const currentOrigin = window.location.origin;
-            iframe.src = `https://www.youtube-nocookie.com/embed/RODQNphsDpI?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(
-              currentOrigin
-            )}`;
+            // Use standard YouTube embed format (browser will send HTTP Referer automatically)
+            iframe.src =
+              "https://www.youtube.com/embed/RODQNphsDpI?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1";
             iframe.allow =
               "autoplay; fullscreen; picture-in-picture; encrypted-media";
             iframe.allowFullscreen = true;
@@ -1183,7 +1177,7 @@
             iframe.setAttribute("frameborder", "0");
             iframe.setAttribute("webkitallowfullscreen", "true");
             iframe.setAttribute("mozallowfullscreen", "true");
-            iframe.setAttribute("referrerpolicy", "origin");
+            // Don't set referrerpolicy - browser will send HTTP Referer automatically
 
             // Clear any existing content and add iframe
             videoWrapper.innerHTML = "";
