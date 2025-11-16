@@ -114,16 +114,20 @@
         position: relative;
         margin-bottom: 50px;
         overflow: hidden;
+        width: 100%;
+        touch-action: pan-x pan-y pinch-zoom;
       }
 
       .riddle-carousel {
         display: flex;
         transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 100%;
       }
 
       .riddle-section {
         min-width: 100%;
-        padding: 30px;
+        width: 100%;
+        padding: 25px 20px;
         background: rgba(26, 35, 50, 0.6);
         border-radius: 12px;
         border: 2px solid rgba(255, 140, 0, 0.2);
@@ -133,6 +137,7 @@
         backdrop-filter: blur(10px);
         transition: all 0.3s ease;
         flex-shrink: 0;
+        box-sizing: border-box;
       }
 
       .riddle-section::before {
@@ -256,6 +261,10 @@
           inset 0 1px 0 rgba(255, 255, 255, 0.05);
         position: relative;
         transform-style: preserve-3d;
+        width: calc(21.25% - 15px); /* 25% * 0.85 = 21.25% (15% thinner) */
+        max-width: calc(21.25% - 15px);
+        min-width: 0;
+        flex: 0 0 calc(21.25% - 15px);
       }
 
       .column.holding {
@@ -499,7 +508,7 @@
 
       .shape {
         position: absolute;
-        opacity: 0.15;
+        opacity: 0.12;
         animation: float 20s ease-in-out infinite;
       }
 
@@ -552,14 +561,49 @@
         100% {
           transform: translate(0, 0) rotate(0deg);
         }
-        25% {
-          transform: translate(30px, -30px) rotate(90deg);
+        20% {
+          transform: translate(40px, -20px) rotate(72deg);
         }
-        50% {
-          transform: translate(-20px, -50px) rotate(180deg);
+        40% {
+          transform: translate(-30px, -60px) rotate(144deg);
         }
-        75% {
-          transform: translate(-30px, -20px) rotate(270deg);
+        60% {
+          transform: translate(-50px, -30px) rotate(216deg);
+        }
+        80% {
+          transform: translate(20px, -40px) rotate(288deg);
+        }
+      }
+
+      @keyframes floatReverse {
+        0%,
+        100% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        20% {
+          transform: translate(-40px, 20px) rotate(-72deg);
+        }
+        40% {
+          transform: translate(30px, 60px) rotate(-144deg);
+        }
+        60% {
+          transform: translate(50px, 30px) rotate(-216deg);
+        }
+        80% {
+          transform: translate(-20px, 40px) rotate(-288deg);
+        }
+      }
+
+      @keyframes floatSlow {
+        0%,
+        100% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        33% {
+          transform: translate(25px, -35px) rotate(120deg);
+        }
+        66% {
+          transform: translate(-25px, -35px) rotate(240deg);
         }
       }
 
@@ -660,6 +704,24 @@
         width: 100%;
         height: 100%;
         border: none;
+      }
+
+      /* Mobile adjustments */
+      @media (max-width: 767px) {
+        .column {
+          width: calc(21.25% - 10px);
+          max-width: calc(21.25% - 10px);
+          flex: 0 0 calc(21.25% - 10px);
+        }
+
+        .columns-container {
+          gap: 10px;
+          padding: 20px 10px;
+        }
+
+        .riddle-section {
+          padding: 20px 15px;
+        }
       }
 
       /* Responsive adjustments */
@@ -766,9 +828,6 @@
         </div>
       </div>
 
-      <p class="interaction-hint">
-        Hold a column to view the riddle. Use the button to set it.
-      </p>
       <div
         class="columns-container"
         id="columns-container"
@@ -815,12 +874,15 @@
        */
       function createGeometricShapes() {
         const shapeTypes = ["cube", "sphere", "cylinder", "torus"];
-        const numShapes = 25; // Number of shapes to create
+        const animationTypes = ["float", "floatReverse", "floatSlow"];
+        const numShapes = 60; // Increased number of shapes for more visual interest
 
         for (let i = 0; i < numShapes; i++) {
           const shape = document.createElement("div");
           const shapeType =
             shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+          const animationType =
+            animationTypes[Math.floor(Math.random() * animationTypes.length)];
           shape.className = `shape ${shapeType}`;
 
           // Random position
@@ -829,14 +891,15 @@
           shape.style.left = `${left}%`;
           shape.style.top = `${top}%`;
 
-          // Random animation delay and duration
-          const delay = Math.random() * 5;
-          const duration = 15 + Math.random() * 10;
+          // Random animation delay and duration with more variety
+          const delay = Math.random() * 10; // Increased delay range
+          const duration = 12 + Math.random() * 18; // More varied duration (12-30s)
           shape.style.animationDelay = `${delay}s`;
           shape.style.animationDuration = `${duration}s`;
+          shape.style.animationName = animationType;
 
-          // Random size variation using width/height
-          const sizeMultiplier = 0.7 + Math.random() * 0.6;
+          // Random size variation using width/height with wider range
+          const sizeMultiplier = 0.5 + Math.random() * 0.8; // 0.5 to 1.3
           if (shapeType === "cube") {
             const baseSize = 40;
             shape.style.width = `${baseSize * sizeMultiplier}px`;
@@ -1160,24 +1223,25 @@
               return;
             }
 
-            // Create YouTube iframe
-            // According to YouTube docs: HTTP Referer is required and sent automatically by browser
-            // Don't set referrerpolicy on iframe - let browser send referrer naturally
+            // Create YouTube iframe using the exact format from YouTube's embed code
             const iframe = document.createElement("iframe");
-            // Use standard YouTube embed format (browser will send HTTP Referer automatically)
+            // Use YouTube's embed URL with si parameter and autoplay
             iframe.src =
-              "https://www.youtube.com/embed/RODQNphsDpI?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1";
+              "https://www.youtube.com/embed/RODQNphsDpI?si=bBRQFWQ0EcSsbUnc&autoplay=1&mute=1";
             iframe.allow =
-              "autoplay; fullscreen; picture-in-picture; encrypted-media";
+              "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
             iframe.allowFullscreen = true;
             iframe.className = "video";
-            iframe.title = "De Gouden Kooi";
+            iframe.title = "YouTube video player";
             iframe.style.width = "100%";
             iframe.style.height = "100%";
             iframe.setAttribute("frameborder", "0");
             iframe.setAttribute("webkitallowfullscreen", "true");
             iframe.setAttribute("mozallowfullscreen", "true");
-            // Don't set referrerpolicy - browser will send HTTP Referer automatically
+            iframe.setAttribute(
+              "referrerpolicy",
+              "strict-origin-when-cross-origin"
+            );
 
             // Clear any existing content and add iframe
             videoWrapper.innerHTML = "";
@@ -1238,6 +1302,79 @@
 
         // Initialize carousel position
         updateCarouselPosition(0);
+      }
+
+      // Add touch swipe functionality for mobile
+      const carouselContainer = document.querySelector(
+        ".riddle-carousel-container"
+      );
+      if (carouselContainer) {
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let isDragging = false;
+        let startTranslateX = 0;
+        let currentTranslateX = 0;
+
+        carouselContainer.addEventListener("touchstart", (e) => {
+          touchStartX = e.touches[0].clientX;
+          isDragging = true;
+          startTranslateX = currentRiddleIndex * -100;
+          riddleCarousel.style.transition = "none";
+        });
+
+        carouselContainer.addEventListener("touchmove", (e) => {
+          if (!isDragging) return;
+          touchEndX = e.touches[0].clientX;
+          const diff = touchEndX - touchStartX;
+          const carouselWidth = carouselContainer.offsetWidth;
+          const percentage = (diff / carouselWidth) * 100;
+          currentTranslateX = startTranslateX + percentage;
+
+          // Prevent dragging beyond boundaries
+          const minTranslate = -(totalRiddles - 1) * 100;
+          const maxTranslate = 0;
+          currentTranslateX = Math.max(
+            minTranslate,
+            Math.min(maxTranslate, currentTranslateX)
+          );
+
+          riddleCarousel.style.transform = `translateX(${currentTranslateX}%)`;
+        });
+
+        carouselContainer.addEventListener("touchend", () => {
+          if (!isDragging) return;
+          isDragging = false;
+          riddleCarousel.style.transition =
+            "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
+
+          const diff = touchEndX - touchStartX;
+          const threshold = 50; // Minimum swipe distance in pixels
+
+          if (Math.abs(diff) > threshold) {
+            if (diff > 0 && currentRiddleIndex > 0) {
+              // Swipe right - go to previous
+              navigatePrevious();
+            } else if (diff < 0 && currentRiddleIndex < totalRiddles - 1) {
+              // Swipe left - go to next
+              navigateNext();
+            } else {
+              // Snap back to current position
+              updateCarouselPosition(currentRiddleIndex);
+            }
+          } else {
+            // Snap back to current position if swipe wasn't far enough
+            updateCarouselPosition(currentRiddleIndex);
+          }
+        });
+
+        carouselContainer.addEventListener("touchcancel", () => {
+          if (isDragging) {
+            isDragging = false;
+            riddleCarousel.style.transition =
+              "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
+            updateCarouselPosition(currentRiddleIndex);
+          }
+        });
       }
 
       // Set up close button functionality
