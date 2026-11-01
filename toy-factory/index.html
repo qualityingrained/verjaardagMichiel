@@ -204,7 +204,11 @@ const CONFIG = {
   date: null,          // e.g. "Saturday 14 March 2027"
   time: null,          // e.g. "19:30"
   crew: "Annekien, Céline & Joren",
-  turnsToWin: 4,       // how many turns of the press shaft power the machine
+  // Press speed (turns per second) the machine needs, and how long to hold it.
+  // The press turns twice as fast as the crank, so crank at half this speed.
+  paceMin: 0.45,
+  paceMax: 1.0,
+  holdSeconds: 4,
 };
 
 /* ---------- helpers ---------- */
@@ -347,8 +351,8 @@ function drawBlueprint() {
     txt(c, 0, 70, "CRANK", { "text-anchor": "middle", "font-family": "Special Elite", "font-size": 11, fill: ink });
     el("path", { d: "M-30 -52A60 60 0 0 1 30 -52", fill: "none", stroke: ink, "stroke-width": 2 }, c);
     el("path", { d: "M30 -52L20 -56M30 -52L26 -42", stroke: ink, "stroke-width": 2 }, c);
-    txt(g, 12, 192, "The press turns the same", { "font-family": "Caveat", "font-size": 16, fill: ink });
-    txt(g, 12, 208, "way round as the crank...", { "font-family": "Caveat", "font-size": 16, fill: ink });
+    txt(g, 12, 192, "The press turns the other", { "font-family": "Caveat", "font-size": 16, fill: ink });
+    txt(g, 12, 208, "way round to the crank...", { "font-family": "Caveat", "font-size": 16, fill: ink });
   }); else missing(88);
   if (haveB) half(1, (g) => {
     for (let x = 180; x < 336; x += 16) el("path", { d: `M${x} 8V212`, stroke: ink, opacity: .08 }, g);
@@ -356,7 +360,9 @@ function drawBlueprint() {
     const p = el("g", { transform: "translate(256 100)" }, g);
     el("path", { d: gearPath(12, 3.2), fill: "none", stroke: ink, "stroke-width": 1.4, "fill-rule": "evenodd" }, p);
     txt(p, 0, 70, "PRESS", { "text-anchor": "middle", "font-family": "Special Elite", "font-size": 11, fill: ink });
-    txt(p, 0, -34, "× 2", { "text-anchor": "middle", "font-family": "Special Elite", "font-size": 16, fill: ink });
+    txt(p, 0, -50, "× 2", { "text-anchor": "middle", "font-family": "Special Elite", "font-size": 16, fill: ink });
+    el("path", { d: "M26 -15A30 30 0 0 0 -26 -15", fill: "none", stroke: ink, "stroke-width": 2 }, p);
+    el("path", { d: "M-26 -15L-28 -26M-26 -15L-15 -19", stroke: ink, "stroke-width": 2 }, p);
     txt(g, 182, 192, "...and turns twice for", { "font-family": "Caveat", "font-size": 17, fill: ink });
     txt(g, 182, 208, "every turn of the crank.", { "font-family": "Caveat", "font-size": 17, fill: ink });
   }); else missing(252);
@@ -382,6 +388,9 @@ function buildInventory() {
     if (p.n) el("path", { d: gearPath(p.n, 58 / p.n), fill: "url(#brass)", "fill-rule": "evenodd", stroke: "#4a3010", "stroke-width": 1.5 }, s);
     else if (p.id === "crank") crankShape(s).setAttribute("transform", "translate(-20 0) scale(.9)");
     else paperShape(s).setAttribute("transform", "scale(1.4)");
+    if (p.id.startsWith("bp")) {
+      slot.addEventListener("click", () => { if (found.has(p.id)) openBlueprint(); });
+    }
     inv.appendChild(slot);
   });
 }
@@ -581,10 +590,8 @@ function rockingHorse(svg, x, y) {
   el("path", { d: "M-56 -86Q-86 -76 -80 -48", fill: "none", stroke: "#a8432a", "stroke-width": 8, "stroke-linecap": "round" }, g);
 }
 
-/* The torch moves like a trackpad: drag anywhere and the beam follows the
-   movement, so a finger never covers what it lights. A quick tap searches
-   whatever sits in the middle of the beam. */
-const SENS = 1.3;
+/* The torch lights up right where the finger touches and follows it while
+   dragging. A quick tap searches whatever is under the finger. */
 let act1Done = false;
 
 function startAct1() {
@@ -592,21 +599,20 @@ function startAct1() {
   const stage = $("#scene-stage"), dark = $("#dark"), caption = $("#act1-caption"), svg = $("#scene");
   let bx = stage.clientWidth / 2, by = stage.clientHeight * 0.45;
   let touch = null, lit = false;
+  const aim = (e) => {
+    const r = stage.getBoundingClientRect();
+    bx = clamp(e.clientX - r.left, 0, r.width);
+    by = clamp(e.clientY - r.top, 0, r.height);
+  };
 
   stage.addEventListener("pointerdown", (e) => {
-    const r = stage.getBoundingClientRect();
     if (!lit) { lit = true; audio(); } // first touch switches the torch on (and unlocks sound on iOS)
-    if (e.pointerType === "mouse") { bx = e.clientX - r.left; by = e.clientY - r.top; }
-    touch = { id: e.pointerId, lx: e.clientX, ly: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now() };
+    aim(e);
+    touch = { id: e.pointerId, sx: e.clientX, sy: e.clientY, t: performance.now() };
     stage.setPointerCapture(e.pointerId);
   });
   stage.addEventListener("pointermove", (e) => {
-    const r = stage.getBoundingClientRect();
-    if (e.pointerType === "mouse") { bx = e.clientX - r.left; by = e.clientY - r.top; return; }
-    if (!touch || touch.id !== e.pointerId) return;
-    bx = clamp(bx + (e.clientX - touch.lx) * SENS, 0, r.width);
-    by = clamp(by + (e.clientY - touch.ly) * SENS, 0, r.height);
-    touch.lx = e.clientX; touch.ly = e.clientY;
+    if (e.pointerType === "mouse" || (touch && touch.id === e.pointerId)) aim(e);
   });
   stage.addEventListener("pointerup", (e) => {
     if (!touch || touch.id !== e.pointerId) return;
@@ -680,10 +686,12 @@ function endAct1() {
    Two gears mesh when their axles are exactly r1 + r2 apart; closer than
    r1 + r2 + one tooth and they crash. The bolt layout comes from a solver
    (checked against every possible placement of the seven gears) so that:
-   - route crank > B2 > B3 > press works with 14/16/20, but the press then
-     turns the wrong way and too slowly;
-   - only the 18 on B1 with the 12 on the press gives "same way, twice as fast";
-   - B4 is a dead end that only the 22 fits.
+   - the solution needs three gears: crank > A1 (20) > A2 (14) > press (12)
+     turns the press the other way round, twice as fast;
+   - the short route crank > B1 (16) > press (12) is a trap: right speed,
+     wrong direction. Using both routes at once locks the machine;
+   - B4 is a dead end that only the 22 fits;
+   - the 10 and 18 fit nowhere.
    ========================================================== */
 const M = 4;
 const R = (n) => (n * M) / 2;
@@ -708,24 +716,38 @@ function startAct2() {
   el("rect", { x: 6, y: 352, width: 388, height: 192, rx: 10, fill: "#3b2a1b", stroke: "#24170c", "stroke-width": 4 }, svg);
 
   const bolts = {
-    D:  { x: 199.48, y: 153.99 },
-    B1: { x: 118.38, y: 175.86 },
-    B2: { x: 231.07, y: 223.11 },
-    B3: { x: 186.46, y: 263.24 },
-    B4: { x: 286.68, y: 124.65 },
-    O:  { x: 119.88, y: 235.84 },   // press shaft
+    D:  { x: 189.51, y: 211.07 },   // crank
+    A1: { x: 106.99, y: 241.64 },
+    A2: { x: 79.82, y: 179.31 },
+    B1: { x: 169.67, y: 133.56 },
+    B4: { x: 236.51, y: 290.15 },
+    O:  { x: 114.06, y: 140.18 },   // press shaft
   };
-  const slots = ["B1", "B2", "B3", "B4", "O"];
+  const slots = ["A1", "A2", "B1", "B4", "O"];
   Object.values(bolts).forEach((b) => (b.gear = null));
 
   const pegLayer = el("g", {}, svg);
   const gearLayer = el("g", {}, svg);
   const O = bolts.O;
 
-  // press: belt from the press shaft down to the stamp
-  el("path", { d: `M${O.x - 10} ${O.y}L48 300M${O.x + 10} ${O.y}L92 300`, stroke: "#1a140e", "stroke-width": 6 }, pegLayer);
-  el("rect", { x: 30, y: 290, width: 80, height: 42, rx: 4, fill: "#4c3b28", stroke: "#1a140e", "stroke-width": 3 }, pegLayer);
-  txt(pegLayer, 70, 316, "PRESS", { "text-anchor": "middle", "font-family": "Special Elite", "font-size": 12, fill: "#d9a84e" });
+  // press: belt from the press shaft to the stamp in the top-left corner
+  el("path", { d: `M${O.x} ${O.y - 8}L52 66M${O.x - 8} ${O.y}L28 104`, stroke: "#1a140e", "stroke-width": 6 }, pegLayer);
+  el("rect", { x: 16, y: 62, width: 50, height: 44, rx: 4, fill: "#4c3b28", stroke: "#1a140e", "stroke-width": 3 }, pegLayer);
+  txt(pegLayer, 41, 88, "PRESS", { "text-anchor": "middle", "font-family": "Special Elite", "font-size": 10, fill: "#d9a84e" });
+  // press speed gauge: the needle shows how fast the press shaft turns
+  const G = { x: 338, y: 240, r: 36, max: 2 };
+  const gAngle = (v) => Math.PI + (clamp(v, 0, G.max) / G.max) * Math.PI;
+  const gArc = (v1, v2) => {
+    const [a1, a2] = [gAngle(v1), gAngle(v2)];
+    return `M${G.x + G.r * Math.cos(a1)} ${G.y + G.r * Math.sin(a1)}A${G.r} ${G.r} 0 0 1 ${G.x + G.r * Math.cos(a2)} ${G.y + G.r * Math.sin(a2)}`;
+  };
+  el("path", { d: gArc(0, G.max), fill: "none", stroke: "#1a140e", "stroke-width": 10 }, pegLayer);
+  el("path", { d: gArc(CONFIG.paceMin, CONFIG.paceMax), fill: "none", stroke: "#4f8a3c", "stroke-width": 8 }, pegLayer);
+  el("path", { d: gArc(CONFIG.paceMax, G.max), fill: "none", stroke: "#8a2f1f", "stroke-width": 8 }, pegLayer);
+  const needle = el("path", { d: `M${G.x} ${G.y}H${G.x - G.r + 6}`, stroke: "#efe2c4", "stroke-width": 3, "stroke-linecap": "round" }, pegLayer);
+  el("circle", { cx: G.x, cy: G.y, r: 4, fill: "#efe2c4" }, pegLayer);
+  txt(pegLayer, G.x, G.y + 16, "PRESS SPEED", { "text-anchor": "middle", "font-family": "Special Elite", "font-size": 9, fill: "#a08c6a" });
+  const setNeedle = (v) => needle.setAttribute("transform", `rotate(${((gAngle(v) - Math.PI) * 180) / Math.PI} ${G.x} ${G.y})`);
   txt(pegLayer, 318, 300, "MAIN LINE", { "text-anchor": "middle", "font-family": "Rye", "font-size": 17, fill: "#d9a84e" });
   txt(pegLayer, 318, 318, "No. 5 · HARSH & SONS", { "text-anchor": "middle", "font-family": "Special Elite", "font-size": 10, fill: "#a08c6a" });
 
@@ -843,6 +865,7 @@ function startAct2() {
     }
     const sim = simulate();
     if (sim.order) propagate(sim);
+    rightSetup = false; // re-checked on the next turn of the crank
     drag = null;
   }
   svg.addEventListener("pointerup", drop);
@@ -853,14 +876,17 @@ function startAct2() {
   }
 
   // ----- turning the crank -----
-  let crank = null, progress = 0, won = false, lastTick = 0;
+  let crank = null, won = false, lastTick = 0;
+  // pace: press-shaft turns are collected per frame and smoothed into a speed
+  let pressTurns = 0, pressSpeed = 0, steady = 0, rightSetup = false, lastFrame = performance.now(), lastMsg = "";
+  const say = (m) => { if (m !== lastMsg) { caption.textContent = m; lastMsg = m; } };
   function clearJam() { svg.querySelectorAll(".jam").forEach((g) => g.classList.remove("jam")); }
   function angleAt(e) { const p = toSvg(svg, e.clientX, e.clientY); return Math.atan2(p.y - bolts.D.y, p.x - bolts.D.x); }
   function clunk(msg) {
     const st = $("#machine-stage");
     st.classList.remove("shake"); void st.offsetWidth; st.classList.add("shake");
     if (performance.now() - lastTick > 250) { sfx.clank(); lastTick = performance.now(); }
-    caption.textContent = msg;
+    say(msg);
   }
   drive.g.addEventListener("pointerdown", (e) => {
     if (won) return;
@@ -888,33 +914,53 @@ function startAct2() {
     if (Math.abs(d) > 0.05 && performance.now() - lastTick > 60) { sfx.tick(); lastTick = performance.now(); }
 
     const turning = sim.order.length;
+    rightSetup = false;
     if (!("O" in sim.sign)) {
-      caption.textContent = turning
+      say(turning
         ? "Gears are turning, but the press shaft doesn't move."
-        : "The crank turns, but nothing else does.";
+        : "The crank turns, but nothing else does.");
       return;
     }
-    const right = O.gear.n === PRESS_N && sim.sign.O === 1;
-    if (!right) {
-      caption.textContent = "The press shaft turns... but the press won't come down.";
-      return;
+    pressTurns += (Math.abs(d) * DRIVE_N) / O.gear.n / (2 * Math.PI);
+    rightSetup = O.gear.n === PRESS_N && sim.sign.O === -1; // opposite way, twice as fast
+    if (!rightSetup) say("The press shaft turns... but the press won't come down.");
+  });
+
+  // Runs every frame: smooth the press speed, move the gauge, and count how
+  // long the right setup has been held at a steady pace.
+  function paceLoop(now) {
+    const dt = Math.max(0.001, Math.min(0.1, (now - lastFrame) / 1000)); lastFrame = now;
+    const instant = pressTurns / dt; pressTurns = 0;
+    pressSpeed += (instant - pressSpeed) * (1 - Math.exp(-dt / 0.5));
+    setNeedle(pressSpeed);
+    if (!rightSetup) steady = 0;
+    else if (pressSpeed > CONFIG.paceMax) {
+      if (steady > 0.3) { const st = $("#machine-stage"); st.classList.remove("shake"); void st.offsetWidth; st.classList.add("shake"); sfx.clank(); }
+      steady = 0;
+      say("Too fast! The press is rattling out of rhythm.");
+    } else if (pressSpeed >= CONFIG.paceMin) {
+      steady += dt;
+      say("The press is thumping. Keep this pace...");
+    } else {
+      steady = Math.max(0, steady - dt * 0.5);
+      if (pressSpeed > 0.05) say("Too slow. The press needs more speed.");
     }
-    progress += (Math.abs(d) * DRIVE_N / PRESS_N) / (2 * Math.PI) / CONFIG.turnsToWin;
-    const lit = Math.min(6, Math.floor(progress * 6));
+    const lit = Math.min(6, Math.floor((steady / CONFIG.holdSeconds) * 6));
     bulbs.forEach((b, i) => {
       b.setAttribute("fill", i < lit ? "#ffd36b" : "#3a3226");
       b.style.filter = i < lit ? "drop-shadow(0 0 6px #ffb84a)" : "";
     });
-    caption.textContent = "The press is thumping! Keep cranking...";
-    if (progress >= 1) win();
-  });
+    if (steady >= CONFIG.holdSeconds) return win();
+    requestAnimationFrame(paceLoop);
+  }
+  requestAnimationFrame(paceLoop);
   const endCrank = () => (crank = null);
   drive.g.addEventListener("pointerup", endCrank);
   drive.g.addEventListener("pointercancel", endCrank);
 
   function win() {
     won = true; crank = null;
-    caption.textContent = "The lights are back on! The press is stamping something...";
+    say("The lights are back on! The press is stamping something...");
     sfx.win();
     setTimeout(() => show("reveal"), 2200);
   }
