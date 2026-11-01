@@ -5,7 +5,7 @@
 <!-- Built for iPhone in portrait: no zoom, full height, respects the notch -->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="theme-color" content="#0b0907" />
+<meta name="theme-color" content="#000000" />
 <title>Harsh &amp; Sons</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Rye&family=Special+Elite&display=swap" rel="stylesheet" />
@@ -15,7 +15,7 @@
     --paper: #efe2c4;
     --brass: #d9a84e;
     --rust: #a8432a;
-    --night: #0b0907;
+    --night: #000;
     --blueprint: #1d4a78;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -40,24 +40,6 @@
   .screen.scroll { justify-content: flex-start; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .screen.scroll > * { margin: auto 0; flex-shrink: 0; }
 
-  /* ---------- Intro letter ---------- */
-  .letter {
-    background: var(--paper);
-    color: var(--ink);
-    width: 100%; max-width: 420px;
-    padding: 26px 20px 22px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.6), inset 0 0 80px rgba(120,80,30,.25);
-    transform: rotate(-1deg);
-    line-height: 1.5;
-    font-size: 15px;
-  }
-  .letter h1 {
-    font-family: "Rye", serif; font-weight: normal;
-    font-size: 28px; text-align: center; color: var(--rust); line-height: 1.1;
-  }
-  .letter .est { text-align: center; font-size: 11px; letter-spacing: 3px; margin: 6px 0 16px; }
-  .letter p { margin-bottom: 10px; }
-  .letter .sig { font-family: "Caveat", cursive; font-size: 26px; margin-top: 6px; }
   .btn {
     font-family: "Rye", serif; font-size: 18px;
     background: var(--rust); color: var(--paper);
@@ -68,7 +50,6 @@
   }
   .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #5a1f10; }
   .btn.small { font-size: 14px; padding: 8px 14px; }
-  .letter .btn { display: block; margin: 16px auto 0; }
 
   /* ---------- Shared stage ---------- */
   .stage {
@@ -87,15 +68,21 @@
 
   /* ---------- Act 1: torch ---------- */
   #scene-stage {
+    background: #000;
     aspect-ratio: 600 / 900;
     width: min(100%, calc((100dvh - 140px) * 600 / 900));
   }
+  #act1 .ui { opacity: 0; transition: opacity 1.5s; }
+  #act1.ui-on .ui { opacity: 1; }
+  #act1:not(.ui-on) #scene-stage { border-color: transparent; border-radius: 0; }
+  /* trim 1px so half-covered edge pixels can't leak the scene past the darkness */
+  #scene { clip-path: inset(1px); }
   #dark {
-    position: absolute; inset: 0; pointer-events: none;
+    position: absolute; inset: -2px; pointer-events: none; /* overshoot to hide edge seams */
     --x: 50%; --y: 50%; --r: 60px;
     background:
       radial-gradient(circle at var(--x) var(--y), rgba(255,200,120,.12) 0, rgba(255,200,120,0) calc(var(--r) * .9)),
-      radial-gradient(circle at var(--x) var(--y), rgba(0,0,0,0) 0, rgba(0,0,0,0) calc(var(--r) * .55), rgba(4,3,2,.996) var(--r));
+      radial-gradient(circle at var(--x) var(--y), rgba(0,0,0,0) 0, rgba(0,0,0,0) calc(var(--r) * .55), #000 var(--r));
   }
   .found { animation: collect .6s forwards; }
   @keyframes collect { to { opacity: 0; } }
@@ -166,29 +153,14 @@
 </head>
 <body>
 
-<!-- ============ INTRO ============ -->
-<section class="screen scroll active" id="intro">
-  <div class="letter">
-    <h1>Harsh &amp; Sons<br/>Toy Factory</h1>
-    <div class="est">FIVE GENERATIONS OF TOYMAKING</div>
-    <p>Dear <span class="js-name">applicant</span>,</p>
-    <p>We hear you are good with your hands. That's lucky, because we are <em>always</em> looking for staff, and the chances of being turned down are slim.</p>
-    <p>Our main assembly line has broken down, and the lights are out.</p>
-    <p><strong>Your trial shift:</strong> get the machine running again.</p>
-    <p>Take a torch.</p>
-    <div class="sig">The Harsh family</div>
-    <button class="btn" id="start-btn">Light the torch</button>
-  </div>
-</section>
-
 <!-- ============ ACT 1: DARK WORKSHOP ============ -->
-<section class="screen" id="act1">
+<section class="screen active" id="act1">
   <div class="stage" id="scene-stage">
     <svg id="scene" viewBox="0 0 600 900" preserveAspectRatio="xMidYMid meet"></svg>
     <div id="dark"></div>
   </div>
-  <div class="inventory" id="inventory"></div>
-  <div class="caption" id="act1-caption">Drag anywhere to move the torch. Tap to search whatever is in the light.</div>
+  <div class="inventory ui" id="inventory"></div>
+  <div class="caption ui" id="act1-caption"></div>
 </section>
 
 <!-- ============ ACT 2: MACHINE ============ -->
@@ -423,12 +395,12 @@ function addPart(parent, id, x, y, hidden = false) {
   else if (id === "crank") crankShape(g).setAttribute("transform", "rotate(-20)");
   else paperShape(g).setAttribute("transform", "rotate(-6)");
   const cx = id === "crank" ? x + 20 : x, cy = id === "crank" ? y - 7 : y;
-  const t = { kind: "part", id, x: cx, y: cy, node: g, hidden, reach: 40 };
+  const t = { kind: "part", id, x: cx, y: cy, node: g, hidden, reach: 60 };
   things.push(t);
   return t;
 }
 function addOpenable(x, y, reach, msg, open, contents) {
-  things.push({ kind: "open", x, y, reach, msg, open, contents, opened: false });
+  things.push({ kind: "open", x, y, reach: Math.max(reach, 55), msg, open, contents, opened: false });
 }
 function addHerring(x, y, reach, msg) {
   things.push({ kind: "herring", x, y, reach, msg });
@@ -619,10 +591,11 @@ function startAct1() {
   show("act1");
   const stage = $("#scene-stage"), dark = $("#dark"), caption = $("#act1-caption"), svg = $("#scene");
   let bx = stage.clientWidth / 2, by = stage.clientHeight * 0.45;
-  let touch = null;
+  let touch = null, lit = false;
 
   stage.addEventListener("pointerdown", (e) => {
     const r = stage.getBoundingClientRect();
+    if (!lit) { lit = true; audio(); } // first touch switches the torch on (and unlocks sound on iOS)
     if (e.pointerType === "mouse") { bx = e.clientX - r.left; by = e.clientY - r.top; }
     touch = { id: e.pointerId, lx: e.clientX, ly: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now() };
     stage.setPointerCapture(e.pointerId);
@@ -640,14 +613,14 @@ function startAct1() {
     const moved = Math.hypot(e.clientX - touch.sx, e.clientY - touch.sy);
     const quick = performance.now() - touch.t < 350;
     touch = null;
-    if (moved < 6 && quick && !act1Done) search();
+    if (moved < 6 && quick && !act1Done && lit) search();
   });
   stage.addEventListener("pointercancel", () => (touch = null));
 
   (function flicker() {
-    const base = stage.clientWidth * 0.17;
-    dark.style.setProperty("--x", bx + "px");
-    dark.style.setProperty("--y", by + "px");
+    const base = lit ? stage.clientWidth * 0.17 : 0;
+    dark.style.setProperty("--x", bx + 2 + "px"); // +2: the overlay starts 2px outside the stage
+    dark.style.setProperty("--y", by + 2 + "px");
     dark.style.setProperty("--r", base * (0.97 + Math.random() * 0.05) + "px");
     if (!act1Done) requestAnimationFrame(flicker);
   })();
@@ -676,6 +649,7 @@ function startAct1() {
 
   function collect(t) {
     found.add(t.id);
+    $("#act1").classList.add("ui-on"); // the UI only appears after the first find
     t.node.classList.add("found");
     document.querySelector(`.slot[data-id="${t.id}"]`).classList.add("filled");
     sfx.pickup();
@@ -949,12 +923,12 @@ function startAct2() {
 /* ---------- start ---------- */
 buildInventory();
 buildScene();
-$("#start-btn").addEventListener("click", () => { audio(); startAct1(); });
 
 // Dev shortcuts: ?act=2 jumps to the machine, ?act=3 to the reveal
 const act = new URLSearchParams(location.search).get("act");
 if (act === "2") { act1Done = true; startAct2(); }
-if (act === "3") show("reveal");
+else if (act === "3") show("reveal");
+else startAct1();
 </script>
 </body>
 </html>
