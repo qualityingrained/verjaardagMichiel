@@ -97,8 +97,6 @@
   }
   .item.found { animation: collect .6s forwards; transform-box: fill-box; transform-origin: center; }
   @keyframes collect { to { opacity: 0; transform: translateY(-30px) scale(1.4); } }
-  .glint { animation: glint 2.6s infinite; transform-box: fill-box; transform-origin: center; }
-  @keyframes glint { 0%, 80%, 100% { opacity: 0; transform: scale(.3); } 88% { opacity: 1; transform: scale(1); } }
 
   .inventory { display: flex; gap: 8px; align-items: center; }
   .slot {
@@ -106,7 +104,10 @@
     display: grid; place-items: center; opacity: .45;
     transition: all .4s;
   }
-  .slot svg { width: 34px; height: 34px; }
+  .slot svg { width: 34px; height: 34px; display: none; }
+  .slot .q { font-family: "Rye", serif; font-size: 20px; color: #5b4630; }
+  .slot.filled svg { display: block; }
+  .slot.filled .q { display: none; }
   .slot.filled { border-style: solid; border-color: var(--brass); opacity: 1; background: rgba(217,168,78,.12); transform: scale(1.08); }
 
   /* ---------- Act 2: machine ---------- */
@@ -158,8 +159,8 @@
     <p>Dear <span class="js-name">applicant</span>,</p>
     <p>We hear you are good with your hands. That's lucky, because we are <em>always</em> looking for staff, and the chances of being turned down are slim.</p>
     <p>Our main assembly line has broken down. The lights are out, and someone left its parts lying around the workshop.</p>
-    <p><strong>Your trial shift:</strong> find the four missing gears and the crank in the dark, then get the machine running again.</p>
-    <p>Take a torch. Mind the teddy bears.</p>
+    <p><strong>Your trial shift:</strong> find whatever the machine is missing, then get it running again.</p>
+    <p>Take a torch.</p>
     <div class="sig">The Harsh family</div>
     <button class="btn" id="start-btn">Light the torch</button>
   </div>
@@ -193,7 +194,7 @@
       <dt>First shift</dt><dd id="c-date"></dd>
       <dt>Clock in</dt><dd id="c-time"></dd>
       <dt>Report to</dt><dd>The Toy Factory, Tales by Torchdale<br/>Herentalsebaan 47, Zoersel</dd>
-      <dt>Bring</dt><dd id="c-crew"></dd>
+      <dt>Your crew</dt><dd id="c-crew"></dd>
     </dl>
     <div class="bday">Happy birthday!</div>
     <div class="stamp">HIRED</div>
@@ -208,7 +209,7 @@ const CONFIG = {
   name: "Michiel",
   date: null,          // e.g. "Saturday 14 March 2027"
   time: null,          // e.g. "19:30"
-  crew: "Your crew (up to 6 players)",
+  crew: "Annekien, Céline & Joren",
   turnsToWin: 3,       // how many turns of the last gear power the machine
 };
 
@@ -327,6 +328,8 @@ function buildInventory() {
   PARTS.forEach((p) => {
     const slot = document.createElement("div");
     slot.className = "slot"; slot.dataset.id = p.id;
+    // show nothing about the part until it is found
+    slot.innerHTML = '<span class="q">?</span>';
     const s = el("svg", { viewBox: "-40 -40 80 80" }, slot);
     brassDefs(s);
     if (p.n) el("path", { d: gearPath(p.n, 54 / p.n), fill: "url(#brass)", "fill-rule": "evenodd", stroke: "#4a3010", "stroke-width": 1.5 }, s);
@@ -431,8 +434,6 @@ function addItem(svg, id, x, y, scale) {
   } else {
     crankShape(s, 1).setAttribute("transform", "rotate(-20)");
   }
-  // twinkle, only visible inside the torch beam
-  el("path", { d: "M0 -10L2 -2L10 0L2 2L0 10L-2 2L-10 0L-2 -2Z", fill: "#fff8d8", class: "glint", transform: "translate(12 -12)", style: `animation-delay:${Math.random() * 2}s` }, inner);
   // the crank's visual centre sits off its pivot
   const cx = id === "crank" ? x + 20 : x, cy = id === "crank" ? y - 7 : y;
   spots.push({ id, x: cx, y: cy, node: inner });
