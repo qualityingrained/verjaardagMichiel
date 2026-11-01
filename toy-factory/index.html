@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<!-- Built for iPhone in portrait: no zoom, full height, respects the notch -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0b0907" />
+<title>Harsh &amp; Sons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Rye&family=Special+Elite&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #2b1d12;
+    --paper: #efe2c4;
+    --brass: #d9a84e;
+    --rust: #a8432a;
+    --night: #0b0907;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  body {
+    background: var(--night);
+    color: var(--paper);
+    font-family: "Special Elite", "Courier New", monospace;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+    gap: 10px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.8s ease;
+  }
+  .screen.active { opacity: 1; pointer-events: auto; }
+  .screen.scroll { justify-content: flex-start; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .screen.scroll > * { margin: auto 0; flex-shrink: 0; }
+
+  /* ---------- Intro letter ---------- */
+  .letter {
+    background: var(--paper);
+    color: var(--ink);
+    width: 100%; max-width: 420px;
+    padding: 26px 20px 22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6), inset 0 0 80px rgba(120,80,30,.25);
+    transform: rotate(-1deg);
+    line-height: 1.5;
+    font-size: 15px;
+  }
+  .letter h1 {
+    font-family: "Rye", serif; font-weight: normal;
+    font-size: 28px; text-align: center; color: var(--rust); line-height: 1.1;
+  }
+  .letter .est { text-align: center; font-size: 11px; letter-spacing: 3px; margin: 6px 0 16px; }
+  .letter p { margin-bottom: 10px; }
+  .letter .sig { font-family: "Caveat", cursive; font-size: 26px; margin-top: 6px; }
+  .btn {
+    font-family: "Rye", serif; font-size: 18px;
+    background: var(--rust); color: var(--paper);
+    border: 2px solid #5a1f10; border-radius: 4px;
+    padding: 14px 24px;
+    box-shadow: 0 4px 0 #5a1f10;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #5a1f10; }
+  .letter .btn { display: block; margin: 16px auto 0; }
+
+  /* ---------- Shared stage ---------- */
+  .stage {
+    position: relative;
+    border: 3px solid #2a1d12;
+    border-radius: 8px;
+    overflow: hidden;
+    touch-action: none;
+    flex-shrink: 0;
+  }
+  .stage svg { display: block; width: 100%; height: 100%; }
+  .caption {
+    font-size: 14px; line-height: 1.35; text-align: center; color: #d8c79f;
+    min-height: 2.7em; max-width: 380px;
+  }
+
+  /* ---------- Act 1: torch ---------- */
+  #scene-stage {
+    aspect-ratio: 600 / 900;
+    width: min(100%, calc((100dvh - 150px) * 600 / 900));
+  }
+  #dark {
+    position: absolute; inset: 0; pointer-events: none;
+    --x: 50%; --y: 50%; --r: 60px;
+    background:
+      radial-gradient(circle at var(--x) var(--y), rgba(255,200,120,.12) 0, rgba(255,200,120,0) calc(var(--r) * .9)),
+      radial-gradient(circle at var(--x) var(--y), rgba(0,0,0,0) 0, rgba(0,0,0,0) calc(var(--r) * .55), rgba(4,3,2,.996) var(--r));
+  }
+  .item.found { animation: collect .6s forwards; transform-box: fill-box; transform-origin: center; }
+  @keyframes collect { to { opacity: 0; transform: translateY(-30px) scale(1.4); } }
+  .glint { animation: glint 2.6s infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes glint { 0%, 80%, 100% { opacity: 0; transform: scale(.3); } 88% { opacity: 1; transform: scale(1); } }
+
+  .inventory { display: flex; gap: 8px; align-items: center; }
+  .slot {
+    width: 44px; height: 44px; border: 2px dashed #5b4630; border-radius: 6px;
+    display: grid; place-items: center; opacity: .45;
+    transition: all .4s;
+  }
+  .slot svg { width: 34px; height: 34px; }
+  .slot.filled { border-style: solid; border-color: var(--brass); opacity: 1; background: rgba(217,168,78,.12); transform: scale(1.08); }
+
+  /* ---------- Act 2: machine ---------- */
+  #machine-stage {
+    aspect-ratio: 400 / 705;
+    width: min(100%, calc((100dvh - 90px) * 400 / 705));
+    background: #1b140e;
+  }
+  .jam path { stroke: #ff3b2f !important; stroke-width: 3 !important; }
+  .shake { animation: shake .3s; }
+  @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+  /* ---------- Reveal ---------- */
+  #reveal { background: radial-gradient(circle at 50% 40%, #3a2a17, var(--night) 70%); }
+  .contract {
+    background: var(--paper); color: var(--ink);
+    width: 100%; max-width: 420px;
+    padding: 26px 20px 22px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.7);
+    position: relative;
+    transform: translateY(40px) rotate(1deg); opacity: 0;
+    transition: transform 1s cubic-bezier(.2,.8,.2,1), opacity 1s;
+    font-size: 15px; line-height: 1.55;
+  }
+  #reveal.active .contract { transform: translateY(0) rotate(1deg); opacity: 1; }
+  .contract h2 { font-family: "Rye", serif; font-weight: normal; text-align: center; color: var(--rust); font-size: 24px; }
+  .contract .sub { text-align: center; font-size: 11px; letter-spacing: 3px; margin-bottom: 14px; }
+  .contract dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 14px 0; }
+  .contract dt { font-weight: bold; }
+  .contract .bday { font-family: "Caveat", cursive; font-size: 30px; text-align: left; margin-top: 8px; min-height: 60px; }
+  .stamp {
+    position: absolute; right: 14px; bottom: 18px;
+    font-family: "Rye", serif; font-size: 30px; color: var(--rust);
+    border: 4px solid var(--rust); padding: 2px 10px; border-radius: 6px;
+    transform: rotate(-14deg) scale(3); opacity: 0;
+    transition: transform .35s cubic-bezier(.5,1.8,.6,1) 1.4s, opacity .2s 1.4s;
+    mix-blend-mode: multiply;
+  }
+  #reveal.active .stamp { transform: rotate(-14deg) scale(1); opacity: .85; }
+</style>
+</head>
+<body>
+
+<!-- ============ INTRO ============ -->
+<section class="screen scroll active" id="intro">
+  <div class="letter">
+    <h1>Harsh &amp; Sons<br/>Toy Factory</h1>
+    <div class="est">FIVE GENERATIONS OF TOYMAKING</div>
+    <p>Dear <span class="js-name">applicant</span>,</p>
+    <p>We hear you are good with your hands. That's lucky, because we are <em>always</em> looking for staff, and the chances of being turned down are slim.</p>
+    <p>Our main assembly line has broken down. The lights are out, and someone left its parts lying around the workshop.</p>
+    <p><strong>Your trial shift:</strong> find the four missing gears and the crank in the dark, then get the machine running again.</p>
+    <p>Take a torch. Mind the teddy bears.</p>
+    <div class="sig">The Harsh family</div>
+    <button class="btn" id="start-btn">Light the torch</button>
+  </div>
+</section>
+
+<!-- ============ ACT 1: DARK WORKSHOP ============ -->
+<section class="screen" id="act1">
+  <div class="stage" id="scene-stage">
+    <svg id="scene" viewBox="0 0 600 900" preserveAspectRatio="xMidYMid meet"></svg>
+    <div id="dark"></div>
+  </div>
+  <div class="inventory" id="inventory"></div>
+  <div class="caption" id="act1-caption">Drag your finger to move the torch. Hold the light on anything useful.</div>
+</section>
+
+<!-- ============ ACT 2: MACHINE ============ -->
+<section class="screen" id="act2">
+  <div class="stage" id="machine-stage">
+    <svg id="machine" viewBox="0 0 400 705"></svg>
+  </div>
+  <div class="caption" id="act2-caption">Drag the gears onto the bolts, then turn the crank.</div>
+</section>
+
+<!-- ============ REVEAL ============ -->
+<section class="screen scroll" id="reveal">
+  <div class="contract">
+    <h2>Employment Contract</h2>
+    <div class="sub">HARSH &amp; SONS TOY FACTORY</div>
+    <p>The Harsh family is pleased to confirm that <strong class="js-name">the applicant</strong> passed the trial shift and is hereby <strong>hired</strong>.</p>
+    <dl>
+      <dt>First shift</dt><dd id="c-date"></dd>
+      <dt>Clock in</dt><dd id="c-time"></dd>
+      <dt>Report to</dt><dd>The Toy Factory, Tales by Torchdale<br/>Herentalsebaan 47, Zoersel</dd>
+      <dt>Bring</dt><dd id="c-crew"></dd>
+    </dl>
+    <div class="bday">Happy birthday!</div>
+    <div class="stamp">HIRED</div>
+  </div>
+</section>
+
+<script>
+/* ==========================================================
+   CONFIG: edit these. Leave date/time as null until known.
+   ========================================================== */
+const CONFIG = {
+  name: "Michiel",
+  date: null,          // e.g. "Saturday 14 March 2027"
+  time: null,          // e.g. "19:30"
+  crew: "Your crew (up to 6 players)",
+  turnsToWin: 3,       // how many turns of the last gear power the machine
+};
+
+/* ---------- helpers ---------- */
+const NS = "http://www.w3.org/2000/svg";
+const $ = (s) => document.querySelector(s);
+function el(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function toSvg(svg, clientX, clientY) {
+  const p = svg.createSVGPoint();
+  p.x = clientX; p.y = clientY;
+  return p.matrixTransform(svg.getScreenCTM().inverse());
+}
+function show(id) {
+  document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === id));
+}
+document.querySelectorAll(".js-name").forEach((n) => (n.textContent = CONFIG.name));
+$("#c-date").textContent = CONFIG.date || "To be announced";
+$("#c-time").textContent = CONFIG.time || "To be announced";
+$("#c-crew").textContent = CONFIG.crew;
+// iOS Safari ignores user-scalable=no in some cases; block pinch gestures too
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+
+/* ---------- tiny sound kit (Web Audio, no files) ---------- */
+let ac = null;
+function audio() {
+  if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (ac && ac.state === "suspended") ac.resume();
+  return ac;
+}
+function tone(freq, dur = 0.08, type = "square", vol = 0.06, when = 0) {
+  const a = audio(); if (!a) return;
+  const t = a.currentTime + when;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(a.destination);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+const sfx = {
+  pickup: () => { tone(660, .08, "triangle", .1); tone(990, .12, "triangle", .08, .07); },
+  clank:  () => { tone(110, .15, "sawtooth", .08); tone(80, .2, "square", .05, .02); },
+  tick:   () => tone(1800, .02, "square", .02),
+  place:  () => tone(300, .06, "square", .06),
+  win:    () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .35, "triangle", .1, i * .15)),
+};
+
+/* ---------- gear geometry ---------- */
+// Tooth pitch radius r = n * m / 2. Gears with the same module m mesh.
+function polar(r, a) { return [r * Math.cos(a), r * Math.sin(a)]; }
+function circleSub(cx, cy, r) {
+  return `M${cx + r} ${cy}A${r} ${r} 0 1 0 ${cx - r} ${cy}A${r} ${r} 0 1 0 ${cx + r} ${cy}Z`;
+}
+function gearPath(n, m) {
+  const r = (n * m) / 2, ra = r + m, rd = r - 1.25 * m, step = (2 * Math.PI) / n;
+  let d = "";
+  for (let i = 0; i < n; i++) {
+    const a = i * step;
+    const p1 = polar(rd, a - step * 0.3), p2 = polar(ra, a - step * 0.14);
+    const p3 = polar(ra, a + step * 0.14), p4 = polar(rd, a + step * 0.3);
+    const next = polar(rd, a + step * 0.7);
+    d += (i === 0 ? "M" : "L") + p1.join(" ");
+    d += `L${p2.join(" ")}L${p3.join(" ")}L${p4.join(" ")}A${rd} ${rd} 0 0 1 ${next.join(" ")}`;
+  }
+  d += "Z";
+  d += circleSub(0, 0, Math.max(m * 1.3, r * 0.16)); // axle hole
+  if (n >= 18) {
+    for (let k = 0; k < 5; k++) {
+      const [hx, hy] = polar(rd * 0.58, (k * 2 * Math.PI) / 5 + 0.3);
+      d += circleSub(hx, hy, rd * 0.2);
+    }
+  }
+  return d;
+}
+function brassDefs(svg) {
+  const defs = el("defs", {}, svg);
+  const lg = el("linearGradient", { id: "brass", x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+  el("stop", { offset: "0", "stop-color": "#f3cf7a" }, lg);
+  el("stop", { offset: ".5", "stop-color": "#c48d35" }, lg);
+  el("stop", { offset: "1", "stop-color": "#7a4f18" }, lg);
+  const st = el("linearGradient", { id: "steel", x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+  el("stop", { offset: "0", "stop-color": "#b9c0c4" }, st);
+  el("stop", { offset: "1", "stop-color": "#4f575c" }, st);
+  return defs;
+}
+function crankShape(parent, scale = 1) {
+  const g = el("g", { transform: `scale(${scale})` }, parent);
+  el("rect", { x: -6, y: -6, width: 52, height: 12, rx: 6, fill: "url(#steel)", stroke: "#2b3033", "stroke-width": 2 }, g);
+  el("circle", { cx: 0, cy: 0, r: 9, fill: "url(#steel)", stroke: "#2b3033", "stroke-width": 2 }, g);
+  el("circle", { cx: 44, cy: 0, r: 9, fill: "#a8432a", stroke: "#3a140b", "stroke-width": 2 }, g);
+  return g;
+}
+
+/* The five parts to find. n = tooth count (null for the crank). */
+const PARTS = [
+  { id: "g24", n: 24 },
+  { id: "g18", n: 18 },
+  { id: "g14", n: 14 },
+  { id: "g10", n: 10 },
+  { id: "crank", n: null },
+];
+
+/* ==========================================================
+   ACT 1: the dark workshop (portrait, 600 x 900)
+   ========================================================== */
+const found = new Set();
+const spots = [];   // everything the torch can "find": parts + red herrings
+
+function buildInventory() {
+  const inv = $("#inventory");
+  PARTS.forEach((p) => {
+    const slot = document.createElement("div");
+    slot.className = "slot"; slot.dataset.id = p.id;
+    const s = el("svg", { viewBox: "-40 -40 80 80" }, slot);
+    brassDefs(s);
+    if (p.n) el("path", { d: gearPath(p.n, 54 / p.n), fill: "url(#brass)", "fill-rule": "evenodd", stroke: "#4a3010", "stroke-width": 1.5 }, s);
+    else crankShape(s, 1).setAttribute("transform", "translate(-20 0) scale(.85)");
+    inv.appendChild(slot);
+  });
+}
+
+function buildScene() {
+  const svg = $("#scene");
+  const defs = brassDefs(svg);
+  const pat = el("pattern", { id: "bricks", width: 80, height: 40, patternUnits: "userSpaceOnUse" }, defs);
+  el("rect", { width: 80, height: 40, fill: "#4a2c22" }, pat);
+  el("path", { d: "M0 20H80M0 0H80M40 0V20M0 20V40M80 20V40", stroke: "#2e1a14", "stroke-width": 3 }, pat);
+  const planks = el("pattern", { id: "planks", width: 160, height: 30, patternUnits: "userSpaceOnUse" }, defs);
+  el("rect", { width: 160, height: 30, fill: "#5b3b22" }, planks);
+  el("path", { d: "M0 0H160M60 0V30M140 0V30", stroke: "#3a2414", "stroke-width": 3 }, planks);
+
+  // wall + floor
+  el("rect", { width: 600, height: 770, fill: "url(#bricks)" }, svg);
+  el("rect", { y: 770, width: 600, height: 130, fill: "url(#planks)" }, svg);
+  el("rect", { y: 762, width: 600, height: 10, fill: "#2a190e" }, svg);
+
+  // factory sign
+  const sign = el("g", { transform: "translate(130 22)" }, svg);
+  el("rect", { width: 340, height: 64, rx: 6, fill: "#2c1e14", stroke: "#8a6a3a", "stroke-width": 4 }, sign);
+  el("text", { x: 170, y: 43, "text-anchor": "middle", "font-family": "Rye", "font-size": 30, fill: "#d9a84e" }, sign).textContent = "HARSH & SONS";
+
+  // moonlit window
+  el("rect", { x: 380, y: 120, width: 160, height: 120, fill: "#1d2a3a", stroke: "#2a190e", "stroke-width": 10 }, svg);
+  el("path", { d: "M460 120V240M380 180H540", stroke: "#2a190e", "stroke-width": 7 }, svg);
+  el("circle", { cx: 505, cy: 150, r: 14, fill: "#cfd8e0" }, svg);
+
+  // chalk note
+  el("text", { x: 335, y: 292, "font-family": "Caveat", "font-size": 27, fill: "#e8e2d4", opacity: .8, transform: "rotate(-4 335 292)" }, svg).textContent = "Every tooth needs";
+  el("text", { x: 370, y: 322, "font-family": "Caveat", "font-size": 27, fill: "#e8e2d4", opacity: .8, transform: "rotate(-4 370 322)" }, svg).textContent = "a partner.";
+
+  // pipes with a valve wheel (red herring)
+  el("path", { d: "M600 380H545V500H600", fill: "none", stroke: "#56606a", "stroke-width": 18 }, svg);
+  const valve = el("g", { transform: "translate(545 440)" }, svg);
+  el("circle", { r: 26, fill: "none", stroke: "#b33a2a", "stroke-width": 7 }, valve);
+  el("path", { d: "M-26 0H26M0 -26V26", stroke: "#b33a2a", "stroke-width": 5 }, valve);
+  el("circle", { r: 6, fill: "#5a1f10" }, valve);
+  spots.push({ herring: "That's a valve wheel. It's bolted to the pipe and won't come off.", x: 545, y: 440 });
+
+  // small gear hanging on a nail
+  addItem(svg, "g10", 420, 410, 0.5);
+  el("circle", { cx: 420, cy: 410, r: 3, fill: "#222" }, svg);
+
+  // ---------- shelf (left) ----------
+  el("rect", { x: 20, y: 120, width: 290, height: 440, fill: "#3b2616", stroke: "#24170c", "stroke-width": 6 }, svg);
+  [250, 400, 545].forEach((y) => el("rect", { x: 20, y, width: 290, height: 14, fill: "#6b4526" }, svg));
+  // g24 peeking out behind the teddy
+  addItem(svg, "g24", 160, 220, 0.5);
+  teddy(svg, 100, 250);
+  [215, 250, 285].forEach((x) => soldier(svg, x, 250));
+  ["T", "O", "Y"].forEach((c, i) => block(svg, 38 + i * 52, 352, c, ["#a8432a", "#3f6e8c", "#c9a227"][i]));
+  el("circle", { cx: 250, cy: 370, r: 30, fill: "#3f6e8c" }, svg);
+  el("path", { d: "M220 370A30 30 0 0 0 280 370", fill: "#c9a227" }, svg);
+  el("rect", { x: 38, y: 485, width: 76, height: 60, fill: "#a8432a", stroke: "#5a1f10", "stroke-width": 4 }, svg);
+  el("ellipse", { cx: 76, cy: 485, rx: 38, ry: 10, fill: "#e8dcc0" }, svg);
+  el("path", { d: "M38 495L114 535M114 495L38 535", stroke: "#e8dcc0", "stroke-width": 3 }, svg);
+  train(svg, 135, 545);
+
+  // ---------- workbench (right) ----------
+  el("rect", { x: 330, y: 610, width: 260, height: 20, fill: "#7a5230", stroke: "#3a2414", "stroke-width": 4 }, svg);
+  el("rect", { x: 342, y: 630, width: 18, height: 135, fill: "#5b3b22" }, svg);
+  el("rect", { x: 560, y: 630, width: 18, height: 135, fill: "#5b3b22" }, svg);
+  addItem(svg, "g14", 395, 592, 0.5);
+  block(svg, 413, 566, "", "#c9a227", 44);
+  block(svg, 345, 576, "", "#3f6e8c", 34);
+  robot(svg, 510, 610);
+  el("rect", { x: 440, y: 550, width: 50, height: 8, rx: 3, fill: "#8a5a2c", transform: "rotate(-60 465 554)" }, svg);
+
+  // ---------- floor ----------
+  rockingHorse(svg, 150, 755);
+  // crank under the bench, half under a rag
+  addItem(svg, "crank", 345, 815, 1);
+  el("path", { d: "M365 830Q405 790 455 820Q475 840 445 845Q405 850 370 842Z", fill: "#6e6656" }, svg);
+  // crate with g18 sticking out
+  addItem(svg, "g18", 505, 790, 0.5);
+  el("rect", { x: 445, y: 800, width: 120, height: 75, fill: "#8a6438", stroke: "#3a2414", "stroke-width": 4 }, svg);
+  el("path", { d: "M445 825H565M445 850H565", stroke: "#3a2414", "stroke-width": 3 }, svg);
+  el("text", { x: 505, y: 845, "text-anchor": "middle", "font-family": "Special Elite", "font-size": 13, fill: "#2a190e" }, svg).textContent = "FRAGILE";
+
+  // dead hanging lamp
+  el("path", { d: "M330 86V110", stroke: "#222", "stroke-width": 3 }, svg);
+  el("path", { d: "M305 128L330 108L355 128Z", fill: "#2f3a33" }, svg);
+
+  // progress ring shown while the torch rests on something
+  ring = el("circle", { r: 34, fill: "none", stroke: "#ffd36b", "stroke-width": 5, "stroke-linecap": "round", opacity: 0, "stroke-dasharray": `${2 * Math.PI * 34}`, transform: "rotate(-90)" }, svg);
+}
+let ring;
+
+function addItem(svg, id, x, y, scale) {
+  const p = PARTS.find((q) => q.id === id);
+  const g = el("g", { transform: `translate(${x} ${y})` }, svg);
+  const inner = el("g", { class: "item", "data-id": id }, g);
+  const s = el("g", { transform: `scale(${scale})` }, inner);
+  if (p.n) {
+    el("path", { d: gearPath(p.n, 6), fill: "url(#brass)", "fill-rule": "evenodd", stroke: "#4a3010", "stroke-width": 2, transform: `rotate(${Math.random() * 40})` }, s);
+  } else {
+    crankShape(s, 1).setAttribute("transform", "rotate(-20)");
+  }
+  // twinkle, only visible inside the torch beam
+  el("path", { d: "M0 -10L2 -2L10 0L2 2L0 10L-2 2L-10 0L-2 -2Z", fill: "#fff8d8", class: "glint", transform: "translate(12 -12)", style: `animation-delay:${Math.random() * 2}s` }, inner);
+  // the crank's visual centre sits off its pivot
+  const cx = id === "crank" ? x + 20 : x, cy = id === "crank" ? y - 7 : y;
+  spots.push({ id, x: cx, y: cy, node: inner });
+}
+
+/* little toy drawings */
+function teddy(svg, x, y) {
+  const g = el("g", { transform: `translate(${x} ${y})` }, svg);
+  const c = "#8a5a32";
+  el("ellipse", { cx: 0, cy: -32, rx: 30, ry: 32, fill: c }, g);
+  el("circle", { cx: 0, cy: -78, r: 24, fill: c }, g);
+  el("circle", { cx: -18, cy: -98, r: 9, fill: c }, g);
+  el("circle", { cx: 18, cy: -98, r: 9, fill: c }, g);
+  el("ellipse", { cx: 0, cy: -70, rx: 10, ry: 7, fill: "#c79a6a" }, g);
+  el("circle", { cx: -8, cy: -84, r: 3, fill: "#111" }, g);
+  el("circle", { cx: 8, cy: -84, r: 3, fill: "#111" }, g);
+  el("path", { d: "M-10 -56L10 -56L0 -48Z", fill: "#a8432a" }, g);
+}
+function soldier(svg, x, y) {
+  const g = el("g", { transform: `translate(${x} ${y})` }, svg);
+  el("rect", { x: -8, y: -30, width: 16, height: 30, fill: "#1f2d4a" }, g);
+  el("rect", { x: -9, y: -52, width: 18, height: 22, fill: "#a8432a" }, g);
+  el("circle", { cx: 0, cy: -60, r: 8, fill: "#e0b48a" }, g);
+  el("rect", { x: -7, y: -82, width: 14, height: 18, fill: "#111" }, g);
+}
+function block(svg, x, y, letter, color, size = 48) {
+  el("rect", { x, y, width: size, height: size, fill: color, stroke: "#2a190e", "stroke-width": 3 }, svg);
+  if (letter) el("text", { x: x + size / 2, y: y + size * 0.72, "text-anchor": "middle", "font-family": "Rye", "font-size": size * 0.6, fill: "#efe2c4" }, svg).textContent = letter;
+}
+function train(svg, x, y) {
+  const g = el("g", { transform: `translate(${x} ${y})` }, svg);
+  el("rect", { x: 0, y: -40, width: 70, height: 30, fill: "#2f6b3a" }, g);
+  el("rect", { x: 45, y: -60, width: 25, height: 20, fill: "#2f6b3a" }, g);
+  el("rect", { x: 10, y: -58, width: 10, height: 18, fill: "#111" }, g);
+  el("rect", { x: 80, y: -34, width: 60, height: 24, fill: "#a8432a" }, g);
+  [15, 55, 95, 125].forEach((cx) => el("circle", { cx, cy: -8, r: 9, fill: "#222" }, g));
+}
+function robot(svg, x, y) {
+  const g = el("g", { transform: `translate(${x} ${y})` }, svg);
+  el("rect", { x: -22, y: -50, width: 44, height: 50, fill: "#9aa3a8", stroke: "#3b4246", "stroke-width": 3 }, g);
+  el("rect", { x: -16, y: -82, width: 32, height: 28, fill: "#9aa3a8", stroke: "#3b4246", "stroke-width": 3 }, g);
+  el("circle", { cx: -7, cy: -68, r: 4, fill: "#a8432a" }, g);
+  el("circle", { cx: 7, cy: -68, r: 4, fill: "#a8432a" }, g);
+  el("path", { d: "M0 -82V-94", stroke: "#3b4246", "stroke-width": 3 }, g);
+  el("circle", { cx: 0, cy: -96, r: 4, fill: "#c9a227" }, g);
+  el("circle", { cx: 0, cy: -25, r: 8, fill: "none", stroke: "#3b4246", "stroke-width": 3, "stroke-dasharray": "3 3" }, g);
+}
+function rockingHorse(svg, x, y) {
+  const g = el("g", { transform: `translate(${x} ${y})` }, svg);
+  el("path", { d: "M-90 -20Q0 25 90 -20", fill: "none", stroke: "#6b4526", "stroke-width": 12, "stroke-linecap": "round" }, g);
+  el("path", { d: "M-50 -5L-35 -65M50 -5L35 -65", stroke: "#6b4526", "stroke-width": 10, "stroke-linecap": "round" }, g);
+  el("ellipse", { cx: 0, cy: -80, rx: 58, ry: 26, fill: "#efe2c4", stroke: "#6b4526", "stroke-width": 4 }, g);
+  el("path", { d: "M38 -95Q48 -140 70 -150Q95 -150 100 -128Q92 -120 78 -118Q66 -100 58 -82Z", fill: "#efe2c4", stroke: "#6b4526", "stroke-width": 4 }, g);
+  el("path", { d: "M66 -150Q50 -125 42 -95", fill: "none", stroke: "#a8432a", "stroke-width": 8, "stroke-linecap": "round" }, g);
+  el("circle", { cx: 80, cy: -136, r: 3.5, fill: "#111" }, g);
+  el("path", { d: "M-56 -86Q-86 -76 -80 -48", fill: "none", stroke: "#a8432a", "stroke-width": 8, "stroke-linecap": "round" }, g);
+}
+
+/* The beam sits above the fingertip so the finger never hides what it lights. */
+const BEAM_OFFSET = 85;     // px above the touch point
+const DWELL = 0.65;         // seconds of steady light needed to pick something up
+const REACH = 38;           // how close (scene units) the beam centre must be
+let act1Done = false;
+
+function startAct1() {
+  show("act1");
+  const stage = $("#scene-stage"), dark = $("#dark"), caption = $("#act1-caption"), svg = $("#scene");
+  let bx = stage.clientWidth / 2, by = stage.clientHeight * 0.4;   // beam centre, stage px
+  const follow = (e) => {
+    const r = stage.getBoundingClientRect();
+    const offset = e.pointerType === "mouse" ? 0 : BEAM_OFFSET;
+    bx = e.clientX - r.left;
+    by = Math.max(0, e.clientY - r.top - offset);
+  };
+  stage.addEventListener("pointerdown", follow);
+  stage.addEventListener("pointermove", follow);
+
+  let target = null, held = 0, last = performance.now(), lastHerring = null;
+  function frame(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    const base = stage.clientWidth * 0.17;
+    dark.style.setProperty("--x", bx + "px");
+    dark.style.setProperty("--y", by + "px");
+    dark.style.setProperty("--r", base * (0.97 + Math.random() * 0.05) + "px");
+
+    // what is the beam resting on?
+    const r = stage.getBoundingClientRect();
+    const p = toSvg(svg, r.left + bx, r.top + by);
+    let near = null;
+    for (const s of spots) {
+      if (s.id && found.has(s.id)) continue;
+      if (Math.hypot(s.x - p.x, s.y - p.y) < REACH) { near = s; break; }
+    }
+    if (near !== target) { target = near; held = 0; }
+    if (target) {
+      held += dt;
+      if (target.herring) {
+        if (lastHerring !== target && held > 0.3) { caption.textContent = target.herring; sfx.clank(); lastHerring = target; }
+      } else {
+        const frac = Math.min(1, held / DWELL);
+        ring.setAttribute("cx", 0); ring.setAttribute("cy", 0);
+        ring.setAttribute("transform", `translate(${target.x} ${target.y}) rotate(-90)`);
+        ring.setAttribute("opacity", 0.9);
+        ring.setAttribute("stroke-dashoffset", 2 * Math.PI * 34 * (1 - frac));
+        if (frac >= 1) collect(target);
+      }
+    } else {
+      ring.setAttribute("opacity", 0);
+      lastHerring = null;
+    }
+    if (!act1Done) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  function collect(s) {
+    found.add(s.id);
+    s.node.classList.add("found");
+    ring.setAttribute("opacity", 0);
+    target = null;
+    document.querySelector(`.slot[data-id="${s.id}"]`).classList.add("filled");
+    sfx.pickup();
+    const left = PARTS.length - found.size;
+    caption.textContent = left ? `Got it! ${left} more to find.` : "That's everything. Now for the machine...";
+    if (!left) endAct1();
+  }
+}
+function endAct1() {
+  act1Done = true;
+  const dark = $("#dark");
+  dark.style.transition = "opacity 1.5s";
+  dark.style.opacity = "0";
+  setTimeout(startAct2, 2600);
+}
+
+/* ==========================================================
+   ACT 2: the machine (portrait, 400 x 705)
+   Gears mesh when the distance between two axles equals the sum of
+   their pitch radii. The bolt positions are built from the solution,
+   so exactly one arrangement works and the fourth gear is a decoy.
+   ========================================================== */
+const M = 5; // module (tooth size) for every machine gear
+const R = (n) => (n * M) / 2;
+
+function startAct2() {
+  show("act2");
+  const svg = $("#machine"), caption = $("#act2-caption");
+  brassDefs(svg);
+
+  // machine panel
+  el("rect", { x: 6, y: 6, width: 388, height: 462, rx: 10, fill: "#2d241b", stroke: "#4c3b28", "stroke-width": 4 }, svg);
+  for (let x = 20; x < 390; x += 40) { el("circle", { cx: x, cy: 18, r: 3, fill: "#5c4a33" }, svg); el("circle", { cx: x, cy: 456, r: 3, fill: "#5c4a33" }, svg); }
+
+  // bulbs: they light up as the machine powers on
+  const bulbs = [];
+  for (let i = 0; i < 6; i++) {
+    const cx = 75 + i * 50;
+    el("rect", { x: cx - 5, y: 22, width: 10, height: 10, fill: "#3b3b3b" }, svg);
+    bulbs.push(el("circle", { cx, cy: 44, r: 12, fill: "#3a3226", stroke: "#1a140e", "stroke-width": 2 }, svg));
+  }
+
+  // parts tray
+  el("rect", { x: 6, y: 478, width: 388, height: 222, rx: 10, fill: "#3b2a1b", stroke: "#24170c", "stroke-width": 4 }, svg);
+  el("text", { x: 18, y: 497, "font-family": "Special Elite", "font-size": 12, fill: "#a08c6a" }, svg).textContent = "PARTS TRAY";
+
+  // chain: drive gear, 3 empty bolts, output gear, zig-zagging down the panel
+  const SOLUTION = [24, 10, 18];          // bolts 1..3 (the 14 is the decoy)
+  const DRIVE_N = 16, OUT_N = 20;
+  const dirs = [60, 120, 50, 110].map((d) => (d * Math.PI) / 180);
+  const teeth = [DRIVE_N, ...SOLUTION, OUT_N];
+  const nodes = [{ x: 150, y: 115 }];
+  for (let i = 1; i < 5; i++) {
+    const d = R(teeth[i - 1]) + R(teeth[i]);
+    nodes.push({ x: nodes[i - 1].x + d * Math.cos(dirs[i - 1]), y: nodes[i - 1].y + d * Math.sin(dirs[i - 1]) });
+  }
+  nodes.forEach((nd) => (nd.gear = null));
+
+  const pegLayer = el("g", {}, svg);
+  const gearLayer = el("g", {}, svg);
+
+  // belt from the output gear to the press
+  const O = nodes[4];
+  el("path", { d: `M${O.x + 4} ${O.y - 14}L330 330M${O.x + 4} ${O.y + 14}L330 370`, stroke: "#1a140e", "stroke-width": 6 }, pegLayer);
+  el("rect", { x: 305, y: 300, width: 70, height: 100, rx: 4, fill: "#4c3b28", stroke: "#1a140e", "stroke-width": 3 }, pegLayer);
+  el("rect", { x: 315, y: 385, width: 50, height: 6, fill: "#111" }, pegLayer);
+  el("text", { x: 340, y: 416, "text-anchor": "middle", "font-family": "Special Elite", "font-size": 11, fill: "#a08c6a" }, pegLayer).textContent = "PRESS";
+  el("text", { x: 300, y: 130, "text-anchor": "middle", "font-family": "Rye", "font-size": 17, fill: "#d9a84e" }, pegLayer).textContent = "MAIN LINE";
+  el("text", { x: 300, y: 150, "text-anchor": "middle", "font-family": "Special Elite", "font-size": 11, fill: "#a08c6a" }, pegLayer).textContent = "No. 5 · HARSH & SONS";
+
+  // bolts
+  nodes.slice(1, 4).forEach((nd) => {
+    el("circle", { cx: nd.x, cy: nd.y, r: 9, fill: "url(#steel)", stroke: "#1a140e", "stroke-width": 2 }, pegLayer);
+    el("path", { d: `M${nd.x - 5} ${nd.y}H${nd.x + 5}`, stroke: "#1a140e", "stroke-width": 2 }, pegLayer);
+  });
+
+  function makeGear(n, fill = "url(#brass)") {
+    const g = el("g", {}, gearLayer);
+    const rot = el("g", {}, g);
+    el("path", { d: gearPath(n, M), fill, "fill-rule": "evenodd", stroke: "#4a3010", "stroke-width": 2 }, rot);
+    el("circle", { r: 5, fill: "#2b1d12" }, g);
+    return { n, g, rot, x: 0, y: 0, angle: 0, node: null, home: null };
+  }
+  function place(gear, x, y) { gear.x = x; gear.y = y; gear.g.setAttribute("transform", `translate(${x} ${y})`); }
+  function spin(gear, a) { gear.angle = a; gear.rot.setAttribute("transform", `rotate(${(a * 180) / Math.PI})`); }
+
+  // loose gears in the tray (shuffled)
+  const trayGears = [[24, 80, 575], [18, 215, 560], [10, 335, 548], [14, 300, 645]].map(([n, x, y]) => {
+    const gr = makeGear(n);
+    gr.home = { x, y };
+    place(gr, x, y);
+    spin(gr, Math.random());
+    return gr;
+  });
+
+  // fixed output gear, then the drive gear with the crank (drawn last so it stays on top)
+  const out = makeGear(OUT_N, "url(#steel)");
+  place(out, O.x, O.y); O.gear = out;
+  const drive = makeGear(DRIVE_N, "url(#steel)");
+  place(drive, nodes[0].x, nodes[0].y); nodes[0].gear = drive;
+  crankShape(drive.rot, 1);
+  // a bigger invisible grab area for the crank, kept clear of bolt 1
+  el("circle", { r: 46, fill: "transparent" }, drive.g);
+
+  // ----- link status between neighbouring nodes -----
+  function link(i) {
+    const a = nodes[i].gear, b = nodes[i + 1].gear;
+    if (!a || !b) return "gap";
+    const dist = Math.hypot(nodes[i + 1].x - nodes[i].x, nodes[i + 1].y - nodes[i].y);
+    const sum = R(a.n) + R(b.n);
+    if (Math.abs(dist - sum) < 0.5) return "mesh";
+    return dist < sum ? "jam" : "gap";
+  }
+  // angle for gear B so its teeth slot between gear A's teeth
+  function meshAngle(i) {
+    const A = nodes[i], B = nodes[i + 1];
+    const th = Math.atan2(B.y - A.y, B.x - A.x);
+    return th + Math.PI - Math.PI / B.gear.n + (A.gear.n / B.gear.n) * (th - A.gear.angle);
+  }
+  function propagate() {
+    for (let i = 0; i < 4; i++) {
+      if (link(i) !== "mesh") return i; // index where the chain breaks
+      spin(nodes[i + 1].gear, meshAngle(i));
+    }
+    return 4;
+  }
+
+  // ----- dragging loose gears -----
+  // While dragging, the gear floats a little above the finger so it stays visible.
+  const LIFT = 40;
+  let drag = null;
+  trayGears.forEach((gr) => {
+    gr.g.addEventListener("pointerdown", (e) => {
+      if (won) return;
+      if (drag) finishDrag(); // never let an unfinished drag block the next one
+      e.stopPropagation();
+      const p = toSvg(svg, e.clientX, e.clientY);
+      const lift = e.pointerType === "mouse" ? 0 : LIFT;
+      drag = { gr, id: e.pointerId, lift, moved: false, sx: p.x, sy: p.y };
+      if (gr.node) { gr.node.gear = null; gr.node = null; }
+      gearLayer.insertBefore(gr.g, out.g); // above other loose gears, below the crank
+      // capture on the svg, not the gear: moving the gear in the DOM would drop the capture
+      svg.setPointerCapture(e.pointerId);
+      clearJam();
+    });
+  });
+  function follow(e) {
+    const p = toSvg(svg, e.clientX, e.clientY);
+    if (Math.hypot(p.x - drag.sx, p.y - drag.sy) > 6) drag.moved = true;
+    if (drag.moved) place(drag.gr, p.x, p.y - drag.lift);
+  }
+  svg.addEventListener("pointermove", (e) => {
+    if (drag && e.pointerId === drag.id) follow(e);
+  });
+  const drop = (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (e.type === "pointerup") follow(e); // use the final finger position, even if moves were skipped
+    finishDrag();
+  };
+  function finishDrag() {
+    const gr = drag.gr;
+    let best = null, bestD = 50;
+    nodes.slice(1, 4).forEach((nd) => {
+      const d = Math.hypot(nd.x - gr.x, nd.y - gr.y);
+      if (d < bestD) { best = nd; bestD = d; }
+    });
+    if (best && drag.moved) {
+      if (best.gear) sendHome(best.gear);
+      best.gear = gr; gr.node = best;
+      place(gr, best.x, best.y);
+      sfx.place();
+    } else {
+      sendHome(gr); // a quick tap on a mounted gear also takes it off
+    }
+    propagate();
+    drag = null;
+  }
+  svg.addEventListener("pointerup", drop);
+  svg.addEventListener("pointercancel", drop);
+  function sendHome(gr) {
+    if (gr.node) { gr.node.gear = null; gr.node = null; }
+    place(gr, gr.home.x, gr.home.y);
+  }
+
+  // ----- turning the crank -----
+  let crank = null, progress = 0, won = false, lastTick = 0;
+  function clearJam() { svg.querySelectorAll(".jam").forEach((g) => g.classList.remove("jam")); }
+  function angleAt(e) { const p = toSvg(svg, e.clientX, e.clientY); return Math.atan2(p.y - nodes[0].y, p.x - nodes[0].x); }
+  drive.g.addEventListener("pointerdown", (e) => {
+    if (won) return;
+    drive.g.setPointerCapture(e.pointerId);
+    crank = { last: angleAt(e) };
+  });
+  drive.g.addEventListener("pointermove", (e) => {
+    if (!crank) return;
+    const a = angleAt(e);
+    let d = a - crank.last;
+    if (d > Math.PI) d -= 2 * Math.PI;
+    if (d < -Math.PI) d += 2 * Math.PI;
+    crank.last = a;
+
+    // overlapping gears jam the whole machine
+    for (let i = 0; i < 4; i++) {
+      if (link(i) === "jam") {
+        clearJam();
+        nodes[i].gear.g.classList.add("jam");
+        nodes[i + 1].gear.g.classList.add("jam");
+        const st = $("#machine-stage");
+        st.classList.remove("shake"); void st.offsetWidth; st.classList.add("shake");
+        if (performance.now() - lastTick > 250) { sfx.clank(); lastTick = performance.now(); }
+        caption.textContent = "CLUNK. Two gears are crashing into each other.";
+        return;
+      }
+    }
+    clearJam();
+    const before = out.angle;
+    spin(drive, drive.angle + d);
+    const reached = propagate();
+    if (Math.abs(d) > 0.05 && performance.now() - lastTick > 60) { sfx.tick(); lastTick = performance.now(); }
+
+    if (reached === 4) {
+      progress += Math.abs(out.angle - before) / (2 * Math.PI) / CONFIG.turnsToWin;
+      const lit = Math.min(6, Math.floor(progress * 6));
+      bulbs.forEach((b, i) => {
+        b.setAttribute("fill", i < lit ? "#ffd36b" : "#3a3226");
+        b.style.filter = i < lit ? "drop-shadow(0 0 6px #ffb84a)" : "";
+      });
+      caption.textContent = "It's running! Keep cranking...";
+      if (progress >= 1) win();
+    } else {
+      const turning = reached + 1;
+      caption.textContent = turning === 1
+        ? "The crank turns, but nothing else does."
+        : `${turning} gears turning... then the chain stops.`;
+    }
+  });
+  const endCrank = () => (crank = null);
+  drive.g.addEventListener("pointerup", endCrank);
+  drive.g.addEventListener("pointercancel", endCrank);
+
+  function win() {
+    won = true; crank = null;
+    caption.textContent = "The lights are back on! The press is stamping something...";
+    sfx.win();
+    setTimeout(() => show("reveal"), 2200);
+  }
+}
+
+/* ---------- start ---------- */
+buildInventory();
+buildScene();
+$("#start-btn").addEventListener("click", () => { audio(); startAct1(); });
+
+// Dev shortcuts: ?act=2 jumps to the machine, ?act=3 to the reveal
+const act = new URLSearchParams(location.search).get("act");
+if (act === "2") { act1Done = true; startAct2(); }
+if (act === "3") show("reveal");
+</script>
+</body>
+</html>
