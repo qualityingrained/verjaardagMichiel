@@ -135,9 +135,8 @@
     font-size: 15px; line-height: 1.55;
   }
   #reveal.active .contract { transform: translateY(0) rotate(1deg); opacity: 1; }
-  .contract h2 { font-family: "Rye", serif; font-weight: normal; text-align: center; color: var(--rust); font-size: 24px; }
-  .contract .sub { text-align: center; font-size: 11px; letter-spacing: 3px; margin-bottom: 14px; }
-  .contract dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 14px 0; }
+  .contract h2 { font-family: "Rye", serif; font-weight: normal; text-align: center; color: var(--rust); font-size: 21px; line-height: 1.25; margin-bottom: 14px; }
+  .contract dl { display: grid; grid-template-columns: 6.5em 1fr; gap: 8px 12px; margin: 14px 0; }
   .contract dt { font-weight: bold; }
   .contract .bday { font-family: "Caveat", cursive; font-size: 30px; text-align: left; margin-top: 8px; min-height: 60px; }
   .stamp {
@@ -181,14 +180,13 @@
 <!-- ============ REVEAL ============ -->
 <section class="screen scroll" id="reveal">
   <div class="contract">
-    <h2>Employment Contract</h2>
-    <div class="sub">HARSH &amp; SONS TOY FACTORY</div>
+    <h2>HARSH &amp; SONS<br/>TOY FACTORY<br/>EMPLOYMENT CONTRACT</h2>
     <p>The Harsh family is pleased to confirm that <strong class="js-name">the applicant</strong> passed the trial shift and is hereby <strong>hired</strong>.</p>
     <dl>
       <dt>First shift</dt><dd id="c-date"></dd>
       <dt>Clock in</dt><dd id="c-time"></dd>
       <dt>Report to</dt><dd>The Toy Factory, Tales by Torchdale<br/>Herentalsebaan 47, Zoersel</dd>
-      <dt>Your crew</dt><dd id="c-crew"></dd>
+      <dt>Other shift workers</dt><dd id="c-crew"></dd>
     </dl>
     <div class="bday">Happy birthday!</div>
     <div class="stamp">HIRED</div>
